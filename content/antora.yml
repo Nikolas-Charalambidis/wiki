@@ -1,6 +1,7 @@
-name: wiki
+# The ROOT is a special unnamed module name that is generated to the /build/site/ directory instead of a named one
+name: ROOT
 title: Wiki
-# the tilda (~) means the component is unversioned
+# The tilda (~) means the component is unversioned
 version: ~
 start_page: ROOT:ROOT.adoc
 nav:

@@ -3,7 +3,8 @@
 
 site:
   url: http://localhost/
-  start_page: wiki::ROOT.adoc
+# The following property is not needed as long as we start in ROOT
+# start_page: wiki::ROOT.adoc
 
 content:
   sources:

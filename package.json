@@ -10,7 +10,7 @@
   "scripts": {
     "clean": "rm -rf build",
     "render": "yarn run clean && antora --fetch --log-level=info --asciidoc-sourcemap antora-playbook.yml --stacktrace",
-    "serve": "yarn run render && open build/site/wiki/index.html"
+    "serve": "yarn run render && open build/site/index.html"
   },
   "dependencies": {
     "@antora/cli": "^3.1.4",
