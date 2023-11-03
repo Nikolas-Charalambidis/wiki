@@ -1,5 +1,4 @@
 = Maven
-:toc: right
 
 == Analysis
 

@@ -1,5 +1,4 @@
 = GIT
-:toc: right
 
 == Statistics
 

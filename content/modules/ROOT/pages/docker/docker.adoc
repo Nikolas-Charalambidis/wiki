@@ -1,5 +1,4 @@
 = Docker
-:toc: right
 
 == Images
 

@@ -1,5 +1,4 @@
 = SoapUI
-:toc: right
 
 == Groovy
 

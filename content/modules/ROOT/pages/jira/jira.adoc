@@ -1,5 +1,4 @@
 = Jira
-:toc: right
 
 == Jira Query Language
 

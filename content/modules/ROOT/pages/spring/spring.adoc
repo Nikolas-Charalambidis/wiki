@@ -1,5 +1,4 @@
 = Spring
-:toc: right
 
 == Context and Beans
 

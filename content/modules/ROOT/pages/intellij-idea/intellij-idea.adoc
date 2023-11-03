@@ -1,5 +1,4 @@
 = IntelliJ Idea
-:toc: right
 
 == Debugging
 

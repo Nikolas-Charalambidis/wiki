@@ -1,5 +1,4 @@
 = Bash
-:toc: right
 
 == Listing and Search
 

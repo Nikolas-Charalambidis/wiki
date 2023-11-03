@@ -1,5 +1,4 @@
 = SEO
-:toc: right
 
 == Social Networks
 
