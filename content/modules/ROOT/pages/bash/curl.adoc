@@ -1,0 +1,15 @@
+= cURL
+:toc: right
+
+== Formatting
+
+:label: Response as beautified JSON
+:date: 25-11-2022
+:source: link:https://stackoverflow.com/a/32246976/3764965[StackOverflow]
+include::partial$item.adoc[]
+
+[,shell]
+----
+curl https://gorest.co.in/public/v2/users | python -m json.tool
+curl https://gorest.co.in/public/v2/users | python3 -m json.tool
+----

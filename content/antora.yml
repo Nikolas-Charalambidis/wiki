@@ -1,0 +1,7 @@
+name: wiki
+title: Wiki
+# the tilda (~) means the component is unversioned
+version: ~
+start_page: ROOT:ROOT.adoc
+nav:
+  - modules/ROOT/nav.adoc

@@ -1,0 +1,15 @@
+= Maven
+:toc: right
+
+== Analysis
+
+:label: Find where a dependency comes from
+:date: 23-01-2023
+:source: link:https://stackoverflow.com/a/34167/3764965[StackOverflow]
+include::partial$item.adoc[]
+
+[,shell]
+----
+mvn dependency:tree -Dincludes=ch.qos.logback
+mvn dependency:tree -Dincludes=ch.qos.logback:logback-classic
+----

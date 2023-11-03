@@ -1,0 +1,28 @@
+= IntelliJ Idea
+:toc: right
+
+== Debugging
+
+:label: Setup Spring Boot DevTools
+:date: 04-01-2023
+:source: link:https://www.youtube.com/watch?v=BvIM9gNTDM4[YouTube]
+include::partial$item.adoc[]
+
+1. Include the dependency in `pom.xml`:
++
+[source,xml]
+----
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-devtools</artifactId>
+    <scope>runtime</scope>
+    <optional>true</optional>
+</dependency>
+----
+
+2. Navigate to Settings → Build, Execution, Deployment → Compiler:
+
+3. Enable Build project automatically
+Navigate to Settings → Advanced Settings:
+
+4. Enable Allow auto-make to start even if the developed application is currently running.

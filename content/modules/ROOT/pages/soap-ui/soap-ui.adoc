@@ -1,0 +1,28 @@
+= SoapUI
+:toc: right
+
+== Groovy
+
+:label: REST PUT and DELETE request body
+:date: 25-03-2022
+include::partial$item.adoc[]
+
+[source,groovy]
+----
+mockRequest.with {
+    if (method.toString() == 'PUT' || method.toString() == 'DELETE') {
+        InputStreamReader isr = new InputStreamReader(request.getInputStream(), "UTF-8")
+        BufferedReader br = new BufferedReader(isr)
+        StringBuilder sb = new StringBuilder()
+        while ((s=br.readLine()) != null) {
+            sb.append(s)
+        }
+
+        def requestBody = new groovy.json.JsonSlurper().parseText(sb.toString())
+        log.info "requestBody: " + requestBody
+
+        def whatever = requestBody.whatever
+        // more code
+    }
+}
+----

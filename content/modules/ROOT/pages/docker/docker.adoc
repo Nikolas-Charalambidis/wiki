@@ -1,0 +1,38 @@
+= Docker
+:toc: right
+
+== Images
+
+:label: Remove all images
+:date: 06-06-2023
+:source: link:https://stackoverflow.com/a/44785784/3764965[StackOverflow]
+include::partial$item.adoc[]
+
+[,bash]
+----
+docker rmi -f $(docker images -aq)
+----
+
+== Containers
+
+:label: Remove all containers
+:date: 06-06-2023
+:source: link:https://stackoverflow.com/a/44785784/3764965[StackOverflow]
+include::partial$item.adoc[]
+
+[,shell]
+----
+docker rm -vf $(docker ps -aq)
+----
+
+== Other
+
+:label: Remove everything
+:date: 06-06-2023
+:source: link:https://stackoverflow.com/a/44791684/3764965[StackOverflow]
+include::partial$item.adoc[]
+
+[,shell]
+----
+docker system prune -a --volumes
+----

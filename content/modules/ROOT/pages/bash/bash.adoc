@@ -1,0 +1,112 @@
+= Bash
+:toc: right
+
+== Listing and Search
+
+:label: List the file types (estimate)
+:date: 05-12-2022
+:source: link:https://superuser.com/a/1490807/776068[StackOverflow]
+include::partial$item.adoc[]
+
+[,shell]
+----
+find . -type f -exec file -- {} +
+----
+
+- `-type f` determines file type
+- `-f namefile`/`--files-from namefile` specifies a particular file
+
+:label: List the file sizes
+:date: 22-11-2022
+:source: link:https://stackoverflow.com/a/1019124/3764965[StackOverflow]
+include::partial$item.adoc[]
+
+[,shell]
+----
+du -hs .
+----
+
+- `du` displays disk usage statistics
+- `-h` stands for a human-readable format.
+- `-s` stands for the files only (depth is 0, i.e., `-d 0`).
+- By default, the `du` program recursively lists the directories.
+
+:label: List recursively files and occurrences containing a text
+:date: 17-08-2022
+include::partial$item.adoc[]
+
+[,shell]
+----
+grep -R 'text' .
+----
+
+- `-R`/`-r`/`--recursive` forces recursive search
+
+:label: Find empty JAR archives
+:date: 25-07-2023
+:source: link:https://stackoverflow.com/questions/57150042/spring-boot-tomcat-embed-core-9-0-21-jar-zip-file-is-empty#comment122104233_59500455[StackOverflow]
+include::partial$item.adoc[]
+
+[,shell]
+----
+find $HOME/.m2/repository -iname "*.jar" -size 0
+find $HOME/.m2/repository -iname "*.jar" -size 0 -exec rm {} \;
+----
+
+== Manipulation
+
+:label: Move all files (but not directories)
+:date: 15-02-2023
+:source: self + link:https://askubuntu.com/a/1163886/1673512[AskUbuntu]
+include::partial$item.adoc[]
+
+[,shell]
+----
+for i in `find documents/source -type f -maxdepth 1` ; do
+  cp $i documents/destination ;
+done
+----
+
+- `-type f` determines file type
+- `-maxdepth 1` sets the depth limit from the source directory, remove for recursive search
+
+== Programs
+
+:label: Is a program installed
+:date: 29-11-2022
+:source: link:https://unix.stackexchange.com/a/288402/550665[StackOverflow]
+include::partial$item.adoc[]
+
+[,shell]
+----
+# Node.js for example
+if which node > /dev/null
+then
+    echo "Using Node.js version: $(node -v)"
+else
+    echo "Node.js not installed"
+    exit 1
+fi
+----
+
+== Users and Rights
+
+:label: Make the file executable
+:date: 23-12-2022
+include::partial$item.adoc[]
+
+[,shell]
+----
+chmod +x script.sh
+chmod +x *.sh
+----
+
+:label: List all users
+:date: 30.10.2023
+:source: link:https://apple.stackexchange.com/a/81577/401574[StackOverflow]
+include::partial$item.adoc[]
+
+[,shell]
+----
+dscl . list /Users | grep -v '^_'
+----

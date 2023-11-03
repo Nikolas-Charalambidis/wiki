@@ -1,0 +1,12 @@
+=== {label}
+
+ifeval::['{source}' == '']
+{date}, source: self
+endif::[]
+
+ifeval::['{source}' != '']
+{date}, source: {source}
+endif::[]
+
+// reset the variable
+:source:

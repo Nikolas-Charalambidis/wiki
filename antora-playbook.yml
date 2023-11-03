@@ -1,0 +1,25 @@
+# Purpose of this playbook is only local render preview and build validation as a part of PR verifier.
+# Docs are rendered and published in separate repository for all DBOS projects.
+
+site:
+  url: http://localhost/
+  start_page: wiki::ROOT.adoc
+
+content:
+  sources:
+    - url: .
+      start_path: content
+      branches: HEAD
+
+antora:
+  extensions:
+    # lunr-extension for search
+    - require: '@antora/lunr-extension'
+
+ui:
+  bundle:
+    url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/master/raw/build/ui-bundle.zip?job=bundle-stable
+
+asciidoc:
+  attributes:
+    source-highlighter: 'coderay'

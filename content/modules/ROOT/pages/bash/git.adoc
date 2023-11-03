@@ -1,0 +1,13 @@
+= GIT
+:toc: right
+
+== Statistics
+
+:label: Count changed lines between branches
+:date: 25-11-2022
+include::partial$item.adoc[]
+
+[,shell]
+----
+echo $(git diff --shortstat develop)
+----

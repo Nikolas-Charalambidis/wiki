@@ -1,0 +1,94 @@
+= Spring
+:toc: right
+
+== Context and Beans
+
+:label: Get Spring bean programmatically
+:date: 04-01-2023
+include::partial$item.adoc[]
+
+[source,java]
+----
+// org.springframework.web.context.ContextLoader
+
+ContextLoader.getCurrentWebApplicationContext().getBean("myBean", MyBean.class);
+----
+
+:label: Get Spring proxy true target class
+:date: 10-01-2023
+:source: link:https://stackoverflow.com/a/67644912/3764965[StackOverflow]
+include::partial$item.adoc[]
+
+[source,java]
+----
+final Class<?> targetClass = AopUtils.getTargetClass(object);
+final Class<?> ultimateTargetClass = AopProxyUtils.ultimateTargetClass(object);
+----
+
+== Debugging
+
+:label: Debug if the execution is in the transaction
+:date: 04-01-2023
+include::partial$item.adoc[]
+
+[source,java]
+----
+// org.springframework.transaction.support.TransactionSynchronizationManager
+
+TransactionSynchronizationManager.isActualTransactionActive();
+----
+
+== Transactions
+
+:label: Debug transactions
+:date: 09-12-2022
+:source: link:https://medium.com/@aleksanderkolata/use-case-02-spring-transactional-requires-new-propagation-mode-cb7c16e1dd16[Medium]
+include::partial$item.adoc[]
+
+[source,properties]
+----
+log4j.logger.org.springframework.orm.jpa=TRACE
+log4j.logger.org.springframework.transaction.interceptor=TRACE
+
+logging.level.org.springframework.orm.jpa=TRACE
+logging.level.org.springframework.transaction.interceptor=TRACE
+----
+
+== Tests
+
+:label: Set private static and instance fields (in tests)
+:date: 31-01-2023
+:source: link:https://stackoverflow.com/a/51529480/3764965[StackOverflow] + self
+include::partial$item.adoc[]
+
+[source,java]
+----
+public static void setInstanceField(Object object, String fieldName, Object fieldValue) {
+    final Field field = getField(object, fieldName);
+    ReflectionUtils.makeAccessible(field);
+    ReflectionUtils.setField(field, object, fieldValue);
+}
+
+public static void setStaticField(Object object, String fieldName, Object fieldValue) {
+    final Field field = getField(object, fieldName);
+    field.setAccessible(true);
+    try {
+        final Field modifiersField = Field.class.getDeclaredField("modifiers");
+        modifiersField.setAccessible(true);
+        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+        field.set(null, fieldValue);
+    } catch (NoSuchFieldException | IllegalAccessException e) {
+        final Class<?> type = object.getClass();
+        throw new IllegalArgumentException(String.format("Cannot set field %s in %s", fieldName, type.getName()));
+    }
+}
+
+private static Field getField(final Object object, final String fieldName) {
+    final Class<?> type = object.getClass();
+    final Field field = ReflectionUtils.findField(type, fieldName);
+    if (field is null) {
+        throw new IllegalArgumentException(String.format("No field %s in %s", fieldName, type.getName()));
+    }
+    return field;
+}
+----

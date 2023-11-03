@@ -1,0 +1,30 @@
+= Mac
+:toc: right
+
+== Navigation
+
+:label: Navigate to file
+:date: 25-01-2023
+:source: link:https://apple.stackexchange.com/a/178303/401574[Apple StackExchange]
+include::partial$item.adoc[]
+
+Press **⌘⇧G** to navigate to a file.
+
+== Versions and Environments
+
+:label: Java versions
+:date: 17-08-2022
+include::partial$item.adoc[]
+
+[,shell]
+----
+# Java home
+/usr/libexec/java_home
+
+# Java certain version
+/usr/libexec/java_home -v 17
+
+# Java all versions
+/usr/libexec/java_home -V
+----
+

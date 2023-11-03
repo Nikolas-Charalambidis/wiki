@@ -1,0 +1,20 @@
+{
+  "name": "wiki",
+  "version": "1.0.0",
+  "description": "Wiki",
+  "main": "index.js",
+  "repository": "https://github.com/Nikolas-Charalambidis/wiki.git",
+  "author": "Nikolas Charalambidis <nikolas.charalambidis@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "clean": "rm -rf build",
+    "render": "yarn run clean && antora --fetch --log-level=info --asciidoc-sourcemap antora-playbook.yml --stacktrace",
+    "serve": "yarn run render && open build/site/wiki/index.html"
+  },
+  "dependencies": {
+    "@antora/cli": "^3.1.4",
+    "@antora/lunr-extension": "^1.0.0-alpha.8",
+    "@antora/site-generator": "^3.1.4"
+  }
+}

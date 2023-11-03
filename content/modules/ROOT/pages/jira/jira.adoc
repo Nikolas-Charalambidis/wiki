@@ -1,0 +1,17 @@
+= Jira
+:toc: right
+
+== Jira Query Language
+
+:label: Filter issues that are blocked by non-finished issues
+:date: 21-04-2023
+:source: link:https://jira.atlassian.com/browse/JRASERVER-22024[JRASERVER-22024]
+include::partial$item.adoc[]
+
+[source,sql]
+----
+project = P00001234
+    AND status = Analysis
+    AND substatus = Finished
+    AND issueFunction IN linkedIssuesOf("status in (Backlog, Analysis, Implementation) AND substatus != Finished", "blocks")
+----

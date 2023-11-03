@@ -1,0 +1,18 @@
+= SEO
+:toc: right
+
+== Social Networks
+
+:label: Customize a link shared to Facebook
+:date: 25-01-2023
+:source: link:https://ahrefs.com/blog/open-graph-meta-tags/[https://ahrefs.com/blog/open-graph-meta-tags/]
+include::partial$item.adoc[]
+
+
+```html
+<meta property="og:title" content="Short and row title to all 'shareable' pages." />
+<meta property="og:url" content="Webpage canonical URL to consolidate all connected data." />
+<meta property="og:image" content="Custom image to all 'shareable' pages, use logo for others." />
+<meta property="og:type" content="Use 'article' for articles and 'website' for the rest." />
+<meta property="og:description" content="A brief description of the content." />
+```

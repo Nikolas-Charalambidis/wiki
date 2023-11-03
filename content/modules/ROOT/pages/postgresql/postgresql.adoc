@@ -1,0 +1,26 @@
+= PostgreSQL
+:toc: right
+
+== Database Administration
+
+:label: Start
+:date: 12-10-2023
+:source: link:https://dba.stackexchange.com/a/274335/106262[Database Administrators StackExchange]
+include::partial$item.adoc[]
+
+[,shell]
+----
+cd /Library/PostgreSQL/12/
+sudo -u postgres pg_ctl start -D /Library/PostgreSQL/12/data
+----
+
+
+:label: Stop
+:date: 12-10-2023
+include::partial$item.adoc[]
+
+[,shell]
+----
+cd /Library/PostgreSQL/12/
+sudo -u postgres pg_ctl stop -D /Library/PostgreSQL/12/data
+----

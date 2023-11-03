@@ -1,0 +1,17 @@
+= sed
+:toc: right
+
+== Manipulation
+
+:label: Replace text in a file
+:date: 28-06-2023
+:source: self + link:https://superuser.com/a/1490807/776068[My Shitty Code]
+include::partial$item.adoc[]
+
+[,shell]
+----
+sed -i '' 's/text_to_be_replaced/replacement_text/' /Users/user/file.txt
+----
+
+- `-i` edits files in-place, saving backups with the specified extension. If a zero-length extension is given, no backup will be saved. Unlike `-I`, each file is treated independently from other files.
+- **Important:** In MacOS, the extension argument must be explicitly given (`-i ''` instead of `-i`).
