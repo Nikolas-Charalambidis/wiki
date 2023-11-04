@@ -1,5 +1,39 @@
 = Bash
 
+== Echo
+
+:label: Change and reset colors
+:date: 01-08-2023
+:source: link:https://stackoverflow.com/a/20983251/3764965[StackOverflow]; link:https://superuser.com/q/317343/776068[SuperUser]
+include::partial$item.adoc[]
+
+[,shell]
+----
+echo "$(tput setaf 4)==>$(tput sgr0) Hello World"
+----
+
+:label: Change the printed text
+:date: 01-08-2023
+:source: link:https://stackoverflow.com/a/48841463/3764965[StackOverflow]
+include::partial$item.adoc[]
+
+[,shell]
+----
+echo -n " 50% complete."$'\r'; sleep 1; echo "100% complete."
+----
+
+:label: List the colors
+:date: 01-08-2023
+include::partial$item.adoc[]
+
+[,shell]
+----
+for i in {0..50}
+do
+   echo "$(tput setaf $i) ### $i$(tput sgr0)"
+done
+----
+
 == Listing and Search
 
 :label: List the file types (estimate)
@@ -13,7 +47,7 @@ find . -type f -exec file -- {} +
 ----
 
 - `-type f` determines file type
-- `-f namefile`/`--files-from namefile` specifies a particular file
+- `-f NAMEFILE`/`--files-from NAMEFILE` specifies a particular file
 
 :label: List the file sizes
 :date: 22-11-2022
@@ -67,7 +101,7 @@ done
 ----
 
 - `-type f` determines file type
-- `-maxdepth 1` sets the depth limit from the source directory, remove for recursive search
+- `-maxdepth MAXDEPTH` sets the depth limit from the source directory, remove for recursive search
 
 == Programs
 

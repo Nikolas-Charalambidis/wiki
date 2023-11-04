@@ -1,0 +1,28 @@
+= Kubernetes
+
+== Pods
+
+:label: Get all pods
+:date: 04-11-2023
+include::partial$item.adoc[]
+
+[,shell]
+----
+kubectl get pods -o wide -n dev
+----
+
+- `-o TYPE` specifies an output type. `wide` expands the table by more information. Other options are `json`, `yaml`, etc.
+- `-n NAMESPACE` specifies a name of the namespace.
+
+== Contexts and Namespaces
+
+:label: Get the current namespace
+:date: 04-11-2023
+:source: link:https://stackoverflow.com/a/74897695/3764965[StackOverflow]
+include::partial$item.adoc[]
+
+[,shell]
+----
+kubectl config view --output 'jsonpath={.contexts[?(@.name=="'$(kubectl config current-context)'")].context.namespace}';echo
+----
+
