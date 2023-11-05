@@ -1,0 +1,27 @@
+= Modern Application Configuration in Kubernetes
+
+:link: https://springone.io/2021/sessions/modern-application-configuration-in-kubernetes
+:author: Craig Walls as Engineer, VMware
+:length: 26:49
+:date: 07-09-2021
+:language: English 🇺🇸
+:quote: Spring Cloud Config vs. K8S Config-maps and secrets.
+:track: Architecture
+
+:rating: 5
+:pros: Very catchy speech, an excellent introduction to the environment properties management problem and comparison of approaches
+:cons: The speaker has only one session
+
+include::partial$session.adoc[]
+
+Spring applications environment configuration is based on Spring Environment Abstraction as of Spring 3.1 (`application.properties`, `application.yml`, command-args, JVM system properties...).
+
+They can be in the filesystem and are very difficult to audit and manage across multiple applications and instances.
+
+* Spring Environment Abstraction is extensible and has a solution for versioned (Git, Vault, DB, CredHub...), audited (git log) and centralized configuration - Spring Cloud Config Server.
+* Such configuration must be read from the server and merged into Environment - Spring Cloud Config Server client library.
+* Although Spring Config Server/Client can run on K8S, it must be merged into Resources, that are K8S native, like config-maps and secrets - Tanzu.
+
+**Spring Cloud Config**: Central management of properties, can be versioned, can be audited, HTTP-based property consumption, probably should be secured, requires client-side library or code.
+
+**K8S Config-maps and secrets**: Doesn't require special client code, K8S-native, not centrally managed, versioning/auditing is not built-in, can leverage K8S-native security.

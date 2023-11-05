@@ -2,10 +2,14 @@
 
 :original: Original name
 :author: Nikolas Charalambidis
+:author2: Nikolas Charalambidis
 :length: 12:34
 :date: 03-12-2023
 :language: Czech 🇨🇿 English 🇺🇸
 :quote: Quote.
+:quote2: Quote 2.
+:quote3: Quote 3.
+:track: Advanced
 
 :rating: 2
 :pros: Pros.
@@ -24,5 +28,3 @@ A
 == B
 
 B
-
-include::partial$session-impression.adoc[]

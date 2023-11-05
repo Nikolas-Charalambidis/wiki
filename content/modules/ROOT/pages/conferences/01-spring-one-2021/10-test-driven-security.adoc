@@ -1,0 +1,21 @@
+= Test-Driven Security
+
+:link: https://springone.io/2021/sessions/test-driven-security
+:author: Eleftheria Stein-Kousathana as Software Engineer, VMware
+:length: 22:25
+:date: 08-09-2021
+:language: English 🇺🇸
+:quote: Feature development is guided by writing failing tests first and then writing the minimal amount of code necessary to make a test pass.
+:track: Intermediate/Advanced Spring
+
+:rating: 5
+:pros: Simple introduction to Spring security testing, TDD approach, OWASP mentioned
+:cons: Session labeled as Intermediate/Advanced Spring track should include a sample of OAuth2 testing, and quite a short talk (22 mins of 30 mins available, other speakers use around 25-26 minutes)
+
+include::partial$session.adoc[]
+
+Dependency `org.springframework.security:spring-security-test` brings helpers in `org.springframework.security.test.**` packages and more:
+
+* `mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();` using autowired `WebApplicationContext`
+* `get("/greeting").with(user("Ria")).with(csrf()).andExpect(..)..`
+* `String greeting(@AuthenticationPrincipal(expression = "username") String username)` injects in the currently logged user's username and `String greeting(@AuthenticationPrincipal CustomUser user)` to injects in a subtype of `UserDetails`.

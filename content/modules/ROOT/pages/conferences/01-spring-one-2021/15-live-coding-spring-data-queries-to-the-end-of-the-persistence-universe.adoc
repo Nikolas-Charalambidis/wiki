@@ -1,0 +1,26 @@
+= Live Coding Spring Data Queries to the End of the Persistence Universe
+
+:link: https://springone.io/2021/sessions/introduction-to-spring-data
+:author: Greg Turnquist as Principal Software Engineer, VMware
+:length: 55:32
+:date: 11-09-2021
+:language: English 🇺🇸
+:quote: The queries must flow
+:track: Beginner-Friendly Spring
+
+:rating: 3
+:pros: Auditing introduction, very beginner-friendly
+:cons: Since beginner-friendly, the database structure could be introduced (especially how auditing stores additional data)
+
+include::partial$session.adoc[]
+
+Spring Data JPA has a pre-baked `JpaRepository` that extends `PagingAndSortingRepository` from Spring Data.
+
+For debugging, enable `spring.jpa.show-sql=true` and `logging.level.org.springframework.data=TRACE`.
+
+Having a 1:N relationship between Manager and Employee entities using Spring Data JPA:
+
+* `List<Employee> findByNameContainingIgnoreCase(String partialName)` for full-text search.
+* `List<Employee> findByManagerName(String managerName)` query navigates across relationships.
+
+Use `@EnableJpaAuditing` and register `@EntityListeners(AuditingEntityListener.class)` on the Employee object to enable auditing through `@CreatedDate` and `@LastModifiedDate`.

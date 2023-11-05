@@ -1,0 +1,33 @@
+= Microservices Testing at Scale
+
+:link: https://springone.io/2021/sessions/microservices-testing-at-scale
+:author: Kishore Kotaas as Sr Architect, Discover Financial Services
+:author2: Sindhu Nair as Principal Value Stream Architect, Discover Financial Services
+:length: 22:58
+:date: 09-09-2021
+:language: English 🇺🇸
+:quote: Contract testing allows API producers and consumers to work in a decoupled fashion.
+:tracl: Architecture
+
+:rating: 3
+:pros: Interesting overview of the extended testing pyramid.
+:cons: Too much theoretical and abstract, missing real-life examples of what exactly is tested in each part.
+
+include::partial$session.adoc[]
+
+Testing monolithic architecture heavily relies on End-To-End testing and prolongs testing cycle.
+
+Testing microservice architecture involves testing a lot of small moving pieces, but system integration becomes more complex.
+
+. Unit testing (isolation, mocking, and stubbing)
+. Contract testing (contract creation and verification)
+. System integration testing (system entry points)
+. Backwards compatibility testing (two-step process)
+. Performance testing (virtualize dependencies, short intervals, and quick feedback)
+. Vulnerability testing
+. Disruptive testing (dependency and API outage)
+. E2E testing
+. Browser compatibility testing (Selenium)
+. Production Smoke testing (certificates, network connection).
+
+For disruptive testing, it is possible to use link:https://github.com/codecentric/chaos-monkey-spring-boot[Spring Boot Chaos Monkey].

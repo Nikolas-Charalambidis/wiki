@@ -1,0 +1,26 @@
+= Deploy Code into Production Faster on Kubernetes
+
+:link: https://springone.io/2021/sessions/modern-application-configuration-in-kubernetes
+:author: Valentina Alaria as Director Product Management, VMware
+:length: 27:31
+:date: 07-09-2021
+:language: English 🇺🇸
+:quote: Developer experience on DIY platforms is lacking.
+:track: Cloud Native Platforms
+
+:rating: 2
+:pros: Beginner-friendly introduction, on-spot developer concerns identification.
+:cons: The structure doesn't match the agenda in the introduction and is a bit chaotic, rather Tanzu platform promotion, lacks expected pure K8S tips
+
+include::partial$session.adoc[]
+
+Most of the Kubernetes offerings are delivered as a bag of parts:
+
+* 63 % of organizations, that use K8S, use it as internal platforms or build internal platforms.
+* 94 % of organizations, if use K8S, building internal platforms use more than one platform.
+* 58 % of organizations agree that architectural decision-making has gotten harder.
+
+Developer experience on DIY platforms is lacking.
+Developers must still maintain containers, configure containers that run through multiple layers of YAML, and manage IT and security aspects.
+
+Importance lies in tooling to help developers: leverage automatized DevOps practices, enforce organizational best practices, app-aware platform, and preconfigured templates by Ops.

@@ -1,0 +1,95 @@
+= Leap Ahead with Redis 6.2
+
+:link: https://springone.io/2021/sessions/leap-ahead-with-redis-62
+:author: Brian Sam-Bodden as Developer Advocate, Redis Labs
+:author2: DaShaun Carter as Partner Solution Architect, Redis
+:length: 26:11
+:date: 11-09-2021
+:language: English 🇺🇸
+:quote: The 'Most Loved' database in StackOverflow's Developer survey for the 5th year in a row.
+:track: Beginner-Friendly Spring
+
+:rating: 5
+:pros: Enthusiastic talk covering a wide range of Redis topics with practical examples with some ease.
+:cons: Some commands could be omitted in favor of discussing where Redis aims now (as said at the end of the session).
+
+include::partial$session.adoc[]
+
+Redis (162 clients in 50 languages) stores data in memory, not on disk, which brings <1ms latency.
+
+Spring Data is a family of projects giving a Java/Spring idiomatic way to access data from low-level constructs to high-level OO abstractions in either non/reactive or functional ways.
+
+Spring Data Redis provides easy configuration and access to Redis through low-level connectivity via Lettuce & Jedis libraries, provides `RedisTemplate` as a high-level abstraction for Redis operations (Ops), and implements key-value mappings and repositories.
+
+== Operations
+
+=== String: ValueOperations
+ValueOperations can be performed through `StringRedisTemplate#opsForValue` and the maximum size of a Redis Key is 512MB and the Redis value is 512MB
+
+* `redis-cli set stringKey stringValue` (`SET`) sets a key-value.
+* `redis-cli get stringKey` (`GET`) gets a value by key.
+* `redis-cli getset stringKey stringUpdatedValue` (`GETSET`) gets a value by key and sets the value immediately in one operation.
+* `redis-cli getdel stringKey` (`GETDEL`) gets a value by key and deletes the key immediately.
+* `redis-cli getex stringKey ex 3` (`GETEX`) gets and expires a key in a certain number of seconds.
+* `redis-cli set stringKey stringValue exat 1662163200` (`PXAT`) sets and expires a key at the sprcifiec Unix time in seconds.
+* `redis-cli set stringKey stringValue pxat 1662163200000` (`PXAT`) sets and expires a key at the specific Unix time in milliseconds.
+* `redis-cli ttl stringKey` (`TTL`) returns the remaining time to live of a key that has a timeout.
+
+=== Hash: HashOperations
+HashOperations (`HSET`/`HMSET`/`HGETALL`) can be performed through `StringRedisTemplate#opsForHash`, the hash maps identified by *keys* between string *fields* and string *values* closely resembles Java Map and can store over 4 billion field-value pairs.
+
+* `redis-cli hset hashKey currentTime "${date}"` (`HMET`) sets a field in the hash stored at the key to value.
+* `redis-cli hmset hashKey status "Good" name "Redis" greeting "Hi"` (`HSMET`) sets multiple fields in the hash but is deprecated as of Redis 4.0.0 in favor of `HSET`
+* `redis-cli hget hashKey greeting`  (`HGET`) returns the `value` associated with `field` in the hash stored at key.
+* `redis-cli hgetall hashKey`  (`HGETALL`) returns all fields and values of the hash stored at key.
+* `redis-cli hrandfield hashKey 4 WITHVALUES` (`HRANDFIELD`) returns an array of random distinct fields (if positive count) or random fields with possible duplicates (if negative count).
+
+=== List: ListOperations
+ListOperations can be performed through `ListOperations<K, V>` and they are implemented in Redis as a linked list but has enough commands to turn it into a stack, queue, or any linear storage and store over 4 billion entries.
+
+* Adding: Pushing in `LPUSH`/`LPUSHX`/`RPUSH`/`RPUSHX`, inserting before/after `LINSERT`, and setting the value at an index `LSET`.
+* Removing: Popping off `LPOP`/`RPOP`/`BLPOP`/`BRPOP` (including blocking operations), by value `LREM` and by index range `LTRIM`.
+* Accessing: By index `LINDEX` and by range `LRANGE`.
+* Between sits: Last from one/to fill in another `RPOPLPUSH`/`BRPOPLPUSH` and pop and then push `LMOVE`/`BLMOVE` (including blocking operations).
+
+=== Set: SetOperations
+SetOperations can be performed through `SetOperations<K, V>` and they are a collection of unique and unsorted string elements supported by operations such as union, intersection, and subtraction, most operations perform in constant time (`O(n)`).
+
+*Use cases:* unique item management, tracking OPs, content filtering.
+
+* Adding `SADD` and removing `SPOP`/`SREM`.
+* Accessing `SMEMBERS`/`SRANDMEMBERS and retrieving `SSCAN`.
+* Set info `SCARD`/`SISMEMBER`/`SMISMEMBER` and set operations `SDIF*`/`SINTER*`/`SUNION*`/`SMOVE`.
+
+=== Sorted Set: ZSetOperations
+ZSetOperations operations can be performed through `ZSetOperations<K, V>`, they are weighted sets, tuples with a *value* and a *score*, and elements are always taken by their score or in ranges, in spring Data Redis uses `Set<TypedTuple<E>>` data type.
+
+*Use cases*: Priority queues, low-latency leaderboards, or secondary indexing in general
+
+* `redis-cli zadd game1 100 "Frank" 740 "Jennifer" 200 "Pieter" 512 "Dave" 690 "Ana"` (`ZADD`)
+* `redis-cli zrange game1 0 -1 withscores` (`ZRANGE`)
+* `redis-cli zinter 2 game1 game2 withscores` / `redis-cli zinter 2 game1 game2 withscores aggregate max` (`ZINTER`)
+* `redis-cli zdiff 2 game1 game2 withscores`
+* `redis-cli zadd game1 100 "Foo"` (`ZADD`)
+
+=== Geo: GeoOperations
+GeoOperations can be performed through `StringRedisTemplate#opsForGeo`, it is a sorted set as a latitude and longitude encoded into the score of the sorted set using the geo-hash algorithm.
+
+Since it is still a sorted set, it is possible to use `Z*` commands
+
+* `redis-cli GEOAD running-poi -94.238226 39.029377 "Lake"`
+* `redis-cli GEODIST running-poi "Lake" "Park"`
+
+=== Streams
+
+Streams before Redis 6.2 could be only trimmed to an exact or approximate number of entries which was odd as it defies stream processing
+
+The rule of thumb is that each entry in a stream must have a unique ID greater than any previously seen in the stream (Redis by default uses milliseconds timestamps for this) and now allows you to trim based on ID.
+
+== Future of Redis
+
+Redis team is up to extending and complementing Spring Data Redis with:
+
+* Access to module commands via Spring's Templates, multi-model object-mapping support, JSON object-mapping, and RediSearch integration, Redis Graph oriented-mapping, RediSearch integration for existing Redis Hash mapped entities.
+* Redis Modules Templates follow Spring Data Redis `opsForXXX()` pattern and provide a Native way to interact at the command level with RedisSON, RedisGraph, RediSearch, RedisAI, RedisBloom, and RedisTimeSeries
+

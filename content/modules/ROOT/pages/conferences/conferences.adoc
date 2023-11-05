@@ -14,3 +14,6 @@ Believe me or not, I have yet to experience a session where I felt the urge to l
 
 I have to remark I am not the owner or author of the freely published videos or session talk.
 I always credit the presenter, and double-checked that the online publication of the personal notes complies with the conference or tech talk event code of conduct... if any.
+
+* xref:conferences/spring-one-2021.adoc[]
+* xref:conferences/java-days-2022.adoc[]

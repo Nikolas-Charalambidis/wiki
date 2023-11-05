@@ -1,11 +1,26 @@
 
 [cols="1,4"]
 |===
+ifeval::['{original}' != '']
 |Original name
 |{original}
 
-|Author
+endif::[]
+ifeval::['{link}' != '']
+|Link
+|{link}
+
+endif::[]
+|Author(s)
 |{author}
+ifeval::['{author2}' != '']
+
+{author2}
+endif::[]
+ifeval::['{author3}' != '']
+
+{author3}
+endif::[]
 
 |Length
 |{length}
@@ -16,6 +31,11 @@
 |Language
 |{language}
 
+ifeval::['{track}' != '']
+|Track
+|{track}
+
+endif::[]
 |Rating
 ifeval::[{rating} == 0]
 |☆☆☆☆☆
@@ -55,10 +75,15 @@ endif::[]
 :date:
 :language:
 :length:
+:link:
+:author:
+:author2:
+:author3:
 :original:
 :quote:
 :quote2:
 :quote3:
 :rating:
+:track:
 
 ---

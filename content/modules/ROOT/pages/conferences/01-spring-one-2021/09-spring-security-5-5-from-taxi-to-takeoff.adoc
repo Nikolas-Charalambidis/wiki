@@ -1,0 +1,82 @@
+= Spring Security 5.5 From Taxi to Takeoff
+
+:link: https://springone.io/2021/sessions/spring-security-5-5
+:author: Josh Cummings as Software Engineer, VMware
+:author2: Marcus Da Coregio as Software Engineer, VMware
+:author3: Steve Riesenberg as Software Engineer, VMware
+:length: 51:05
+:date: 08-09-2021
+:language: English 🇺🇸
+:quote: Spring Security integrates the Spring Native for all of its authentication mechanisms and all of its authorization models.
+:track: Beginner-Friendly Spring
+
+:rating: 5
+:pros: Well-prepared, exhaustive and entertaining role-played scenario securing application step-by-step, key takeaways summary at the end.
+:cons: CSRF demo showing requests and responses is difficult to follow and could be explained better.
+
+include::partial$session.adoc[]
+
+== Development
+
+=== Secured by default first principle
+`spring-boot-starter-security` present on classpath means that every endpoint either user-generated or Spring Boot-generated (`GET /error`) requires Basic authentication with `user` username and randomly generated password printed into the console (protection if Spring profile is not changed by mistake).
+
+The random password is generated until the default security configuration is overwritten (`UserDetailsService` bean).
+
+=== Personalize the application to the logged user
+Thread local `SecurityContextHolder` gives access to the application available anywhere on the current thread-bound in a servlet application to the current request.
+
+`SecurityContextHolder.getContext().getAuthentication()` gives some of that information about the currently logged-in user, but there are little difficulties with testing this code because it is needed to mock out the thread-local pattern, security context, and authentication, so method injection is preferred (`List<Flight> getFights(Authentication auth)`).
+
+=== Authorization of a certain endpoint
+Some endpoints must be restricted to certain users, so it is needed to define either *roles* or *authorities* to them in `UserDetailsService` bean and map endpoints to the authority through `SecurityFilterChain` bean (`.httpBasic(Customizer.withDefaults())` must be added though).
+
+It is needed to provide a CSRF token to pass through the `CsrfFilter` to prevent link:https://owasp.org/www-community/attacks/csrf[cross-site request forgery]. Ex.:
+[,java]
+----
+.csrf((csrf) -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+----
+\... and defining `CorsConfigurationSource` bean.
+
+The preflight (`OPTIONS` HTTP method) request conains the CORS headers on response and in the request to `POST`/`PUT` is present header `Access-Control-Allow-*`, and `Cookie` with the `XSRF-TOKEN` token and `X-XSRF-TOKEN` header itself together called *double submitting cookie*.
+
+It is needed to manage CORS to allow call endpoints from the endpoint using `.cors(Customizer.withDefaults())`.
+
+=== Insecure direct object reference vulnerability
+Secure wildcard endpoints such as `PUT /\{flightId}/taxi` are vulnerable as it is not checked if the object to be modified is compliant with the current authentication.
+
+It is not preferred to weave the authentication behavior into the business logic and use more declarative security patterns using the domain-specific language (DSL). Ex.:
+
+* `@PostAuthorize("returnObject?.pilotId == authentication.name")` for outputs.
+* `@PreAuthorize` for inputs.
+
+They are both compliant with the Spring transaction management and upon exception thrown by this construct any kind of change to the database will be rolled back - to get Spring Security to honor these annotations, `@EnableGlobalMethodSecurity(prePostEnabled = true)` is required.
+
+=== Externalize the authorization
+Externalize the authorization by creating a `@Component` implementing `AuthorizationManager<RequestAuthorizationContext>` delegating check to `RequestMatcherDelegatingAuthorizationManager`, using `@EventListener` to apply the rules read once from the database and applying to `SecurityFilterChain`.
+
+Spring Security integrates the Spring Native for all of its authentication mechanisms and all of its authorization models (except SAML).
+
+== Speed it up
+Speed it up from `200ms` to `2ms`:
+
+Basic authentication means the credentials are sent every single time and the password needs to be hashed every time and compared against what is in the user store (especially using the BCrypt algorithm that adds some amount of time).
+
+Switch over to a different authentication scheme: **bearer tokens as JWT tokens**:
+
+* Bring in the `spring-bot-starter-oauth2-resource-server` dependency (the resource server part allows to perform decoding tokens and using them as authentication mechanism).
+* Remove `.httpBasic(Customizer.withDefaults())` with `.csrf(..)`.
+* Add `.oauth2ResourceServer(OAuth2ResourcesServerConfigurer::jwt)` that also configures JWT out of the box.
+
+OAuth2 authorization server is needed to be added to mint the tokens and to give some secure keys to verify a signature on them through properties `spring.security.oauth2.resourceserver.jwt.jwk-set-uri` and `spring.security.oauth2.resourceserver.jwt.issuer-uri`.
+
+Finally, it is needed to define bean `JwtAuthenticationConverter` to make sure that the stored authorities in the database come back and match when a token is decoded.
+
+== Debugging
+
+Spring Security application is easy through `org.springframework.security=TRACE` logging level.
+
+`FilterChainProxy` is the entry point and the first place that Spring-secured interceptor requests fall in and then come to the `SecurityFilterChain` and the further filters that either call the next filter or terminate the request by interrupting ~ link:https://en.wikipedia.org/wiki/Chain-of-responsibility_pattern[Chain of Responsibility] design pattern.
+
+== Testing
+Testing is also easy in `@SpringBootTest` and `@AutoConfigureMockMvc` using `@WithMockUser(username, authorities)` annotation and static helpers in `org.springframework.security.test.**` packages.

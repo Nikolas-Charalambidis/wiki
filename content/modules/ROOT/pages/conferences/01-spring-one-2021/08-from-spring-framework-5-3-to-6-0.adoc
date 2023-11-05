@@ -1,0 +1,31 @@
+= From Spring Framework 5.3 to 6.0
+
+:link: https://springone.io/2021/sessions/from-spring-framework-5-3-to-6-0
+:author: Juergen Hoeller as Spring Framework Project Lead, VMware
+:length: 25:34
+:date: 08-09-2021
+:language: English 🇺🇸
+:quote: Spring Framework 5.3.x remains in active development and Spring Framework 6.0 will be the beginning of a new generation.
+:track: Intermediate/Advanced Spring
+
+:rating: 3
+:pros: Interesting overview of upcoming versions and timing
+:cons: Missing examples of existing problems that new features would resolve, 60% of the time is rather focused on terms than features
+
+include::partial$session.adoc[]
+
+== Spring Framework 5.3.x
+
+* Java 17 support against a Java 8 baseline, support in Spring Boot 2.6 as of November 2021.
+* Java EE 8 focus against a Java EE 7 baseline.
+
+== Spring Framework 6.0
+* Development branch (main) will be established in mid of September, the milestone phase at the end of 2021 (`6.0.M1` version), release candidate phase in mid-2022 (`6.0.RC1`). and `6.0` GA in October 2022.
+* Release cadence is yet undecided, might follow Boot's half-year rhythm.
+* Spring Native initiative moves into Spring proper, AOT processed metadata for regular JVM deployment as well.
+* Introduces core abstractions
+
+== Spring Boot 3.0
+* Spring Boot 3.0 introduces a starter for native applications, build plugins and support for specific GraalVM versions, and auto-configuring the observability backend.
+* Java 17 enforces illegal access rules, and no general escape hatch anymore.
+

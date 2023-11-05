@@ -1,0 +1,63 @@
+= A Spring Data’s Guide to Persistence
+
+:link: https://springone.io/2021/sessions/spring-datas-guide-to-persistence
+:author: Christoph Strobl as Spring Data Engineer, VMware
+:length: 53:54
+:date: 10-09-2021
+:language: English 🇺🇸
+:track: Beginner-Friendly Spring
+
+:rating: 5
+:pros: Comprehensive dive into the anatomy of the Spring Data module and relational and document data storage
+:cons: The very same deep comparison of a graph database model (Neo4j) would be great, troubleshooting part was too way brief, and nothing about named queries as promised
+
+include::partial$session.adoc[]
+
+Spring Data is not a silver bullet (doesn't manage indices), is not a magical tool, and is not one API to rule them all.
+
+Spring Data module anatomy starts with Repository Interface with a default implementation.
+
+*In the case of JPA* uses Entity Manager.
+
+*In the case of NoSQL* stores and modules it sits upon a Template API that takes care of all the resource and transaction management.
+
+It uses the *Mapping* layer responsible for converting domain entities to something that can be stored via the driver.
+
+For some specific properties (for example `enum`) that the driver is not understood, there is a Conversion engine for type translation.
+
+All of the above sits on top of the database driver and does all the heavy lifting.
+
+* `Repository`
+* `CrudRepository` (`findAll` / ` findById` /  `count` / `save` / `delete` / ...)
+* `PagingAndSortingRepository` (`findAll` (Page / Sort))
+
+Derived Fetch Queries, some data sources might need a little help with `@Modifying` annotation for` UPDATE` / `DELETE` (might return` void` / `long` / `List <E>` for none, count or modified entities respectively.
+
+* `List <E> findXXX`: It fetches all matched entities which puts a lot of pressure on the memory and runtime, alternatives are below.
+* `Page <E> getXXX`: Pages has set a chunk of data giving a defined rate range of matching entities and count, however, it needs to allocate resources every time the method is invoked.
+* `Slice <T> queryXXX`: WOrks like Pagination, but it doesn't know the total number of available pages (overhead of extra query) and only knows whether the next slice is available or not.
+* `Stream <E> searchXXX / streamXXX`: Streaming is the alternative for continuous scrolling, however, calling` limit` or `skip` on Stream contradicts its benefits and it is needed to close the Stream properly to release the boundary sources and free memory.
+* `Flux <E> findXXX` is an alternative for the reactive world.
+
+For read-operation, it is possible to use DTO Projection, Closed Interface Projection (interface with getters), or Open Interface Projection (interface with getters annotated with `@Value (" {# target ...} ")`.
+
+Query By Example (`List <E> findAll (Example <E> probe)`) is a good fit for web from search binding.
+
+Spring Data JPA has auditing support through `@ CreatedDate` and` @ LastModifiedDate` annotations and even adds who created/modified the entity if the information is provided through the implementation of Auditor and Spring Security has already implemented for it so it's only needed to plug it in and activate auditing.
+
+Spring Data MongoDB has `@DBRef List <Employee>` and `@DocumentReference Manager` which is a native storage format for references instead of whole documents, analogically the Spring Data JPA uses` @Embedded Manager` (possibly is needed to use `@ AttributeOverrides ({}) `to avoid field names clashes) to flatten the mapped entity.
+
+Spring Data JPA provides access to Stord Procedures, which is a piece of functionality stored in the database, through `@Procedure(" Employee.increaseSalary")` for the JPA-stored procedure having both input and output parameters.
+
+Spring Data MongoDB has support for geospatial queries returning a result list including the distance from the target location and the average distance from all the found documents to the target location, ex. `GeoResults <E> findByOfficeLocationNear (Point p, Distance max)`.
+
+There is always support for native queries if a derived method is not enough, such as `@Query` for Spring Data JPA or` @Aggregation` for Spring Data MongoDB.
+
+Spring Data offers to add store-specific custom implementation using Fragment interfaces on top of `* Repository` interfaces, ie to provide implementation and extend within the repository interface that is looked for at the application start-up.
+
+To tune performance, Spring Data offers:
+
+* Repository Metrics
+* Logiles
+* Network Stats
+* Query Planners

@@ -1,0 +1,190 @@
+= Experience with Spring native
+
+:original: Zkušenosti se Spring Native
+:author: Jiří Pinkas
+:length: 42:55
+:date: 13-11-2023
+:language: Czech 🇨🇿
+:quote: Nobody uses Liferay and WAS today.
+
+:rating: 5
+:pros: Excellent understanding and experience of the speaker as well as his ability to explain simply and highlight the important aspects of the native approach.
+:pros2: Solutions to common problems.
+
+include::partial$session.adoc[]
+
+Spring Boot 3 is in its final design as Spring Native for Spring Boot 2 was rather experimental, vastly different from Spring Boot 3, and the entire implementation for native support and ahead-of-time (AOT) was 3 times reworked.
+GraalVM Native Support needs to be included in https://start.spring.io.
+
+== GraalVM native image
+A technology that compiles ahead-of-time Java code into a standalone runnable application called a native image.
+
+Such an application contains application classes, dependency classes, and classes used by Java runtime and native JVM code.
+
+Native images don't run on JVM (but they come from JVM), but they load important JVM components like memory management, thread scheduling, etc. from a different runtime called Substrate VM.
+
+The result application has a quick start (doesn't load classpath and classes that happen now on the build time) and consumes less RAM compared to JVM.
+
+=== Process of building
+
+. Java bytecode (application, dependencies, JVM)
+. Native image build (static analysis finds what is used, initialization, snapshot)
+. Binary code (code, image heap).
+
+=== Use cases
+* Microservices - resulting Docker image is smaller, starts up quickly, and has a lower memory footprint
+* Serverless and CLI applications - they start instantly
+* GraalVM community version uses only the old SerialGC that is suitable only for smaller heaps, though the GraalVM enterprise edition can use G1.
+
+=== Native and dynamic code
+What is saved into a native image depends on the result of the static analysis on the native image build time.
+Such an analysis can't find out the usages of JNI, reflections, dynamic proxies, or resources from classpath - such classes need to be added manually through configurations.
+Luckily, Spring can do that.
+
+[]
+----
+META-INF/
+├─ native-image/
+│ ├─ resource-congif.json
+│ ├─ serialization-config.json
+│ ├─ jni-config.json
+│ ├─ proxy-config.json
+│ ├─ reflect-config.json
+----
+This was a huge problem since Spring Framework is built on top of reflections and dynamic proxies.
+The creators had to catch up with Micronaut and Quarkus and implement native image support. They originally ignored the benefits of a quick start-up, then they found out that serverless is an interesting use case and finally, they found out they are fucked up.
+The implementation of AOT was lengthy and reworked 3 times.
+
+GraalVM can't dynamically create runtime classes out-of-the-box.
+
+== Spring Boot 3
+
+It's required to have GraalVM installed as an SDK to support GraalVM.
+The execution of `mvn clean spring-boot:build-image -Pnative` calls `spring-boot-maven-plugin:process-aot` internally that runs a Spring container and discovers what beans were created on the application load and generates the following:
+
+* `graalvm-reachability-metadata` (from various libraries)
+** `reflect-config.json`
+** `resource-config.json`
+* `spring-aot` (from the application)
+** `reflect-config.json`
+** `resource-config.json`
+
+Spring luckily doesn't need to store all beans into such JSON configuration files, but only their definitions.
+For example, Spring Data JPA beans are normally created on the application startup, but now it's not possible so that's why the AOT plugin was created.
+
+The creators of Spring AOT found out that such an approach can be used even for non-Spring applications, so it makes sense as a slight performance and size improvement, although the native would not be used.
+
+== Native executable
+
+Native executable is no longer platform-agnostic, which is completely different from what Java was created on top of.
+Now the solution brings a platform-specific executable, which is ok because we have Docker and CI/CD that were not available years ago.
+We somehow reinvented the old solution.
+
+=== Comparison
+The more points, the better:
+
+[cols="1s,1,1,5"]
+|===
+| #
+| JVM
+| Native
+| Remark
+
+| Maturity
+| 100
+| 50
+| JVM is a proven solution, native is pretty much new
+
+| Build time
+| 10
+| 2
+| What are 5 seconds for JVM becomes tens of minutes for native
+
+| Startup time
+| 20
+| 100
+| What are seconds and minutes for JVM is milliseconds for native
+
+| Latency/throughput
+| 100
+| 7
+| JIT in a long run can optimize the runtime, which is not possible for native.
+
+| Memory footprint
+| 50
+| 100
+| What is 200 MB RAM for JVM becomes 50 MB RAM for native
+|===
+
+* Build time becomes very long and it is not possible to reduce it significantly.
+* Image size is smaller for native solutions, but custom layered images are useless for native solutions because each image has a custom and optimized JDK for a given application.
+* Memory footprint is also smaller for native solutions.
+
+**Observation** of a sample stateless application:
+
+* RAM was reduced from 200 MB to 50 MD, response time got lowered from 60ms to 30ms, and start-up took only 70ms.
+* The build time increased brutally from a few seconds to 3-6 minutes.
+
+== Problems
+
+How do we register resources, proxy classes, or classes used by reflection?
+
+A solution is to implement `RuntimeHintsRegistrar` and activate with `@ImportRuntimeHints`:
+[,java]
+----
+public class CustomRuntimeHintsRegistrar implements RuntimeHintsRegistrar {
+
+    @Override
+    public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
+        hints.resources()
+                .registerPattern("banner.txt")
+                .registerPattern("static/*")
+                .registerPattern("templates/*");
+
+        var categories = new MemberCategory[] {
+                MemberCategory.DECLARED_FIELDS,
+                MemberCategory.INTROSPECTED_DECLARED_CONSTRUCTORS,
+                MemberCategory.INTROSPECTED_DECLARED_METHODS,
+                MemberCategory.INVOKE_DECLARED_CONSTRUCTORS,
+                MemberCategory.INVOKE_DECLARED_METHODS
+        };
+        reflectionHints.registerType(org.thymeleaf.engine.IterationStatusVar.class, categories);
+        reflectionHints.registerType(org.thymeleaf.expression.Lists.class, categories);
+    }
+}
+----
+However, it does not import all the classes as long as some DTO/records used for reflection are ignored.
+
+There is a non-Spring workaround solution using `org.reflections:reflections`.
+Create a custom annotation `@RegisterForReflection`, scan and register these classes:
+
+[,java]
+----
+var rootPackage = Main.class.getPackageName();
+var classes = new Reflections(rootPackage).getTypesAnnotatedWith(RegisterForReflection.class)
+var categories = new MemberCategory[] { ... };
+var reflectionHints = hints.reflection();
+classes.forEach(type -> reflectionHints.registerType(type, categories));
+----
+
+== Production support
+
+* [GraalVM Dashboard](https://www.graalvm.org/dashboard/) can introspect the contents of the built application.
+* [Dive](https://github.com/wagoodman/dive) can instrospect layered Docker images.
+* Actuator metrics become limited as they don't display the used memory amount.
+* Profiling becomes problematic and Java Flight Recorder is limited.
+
+=== Heap size tuning
+
+Print each GC run details.
+Currently, there is no other solution.
+[,shell]
+----
+docker run -m 200m --rm -it -p 8080.8080 <image_name> -XX:+PrintGC -XX:+VerboseGC
+----
+
+== Future
+
+- Native image support to be standardized in OpenJDK through Project Leyden.
+- Reachability metadata repository is a repository of reflection and dynamic proxies for various projects so we would write and configure JSON configurations as least as possible. GraalVM thoroughly cooperates with Spring.
+- Link: https://medium.com/graalvm/enhancing-3rd-party-library-support-in-graalvm-native-image-with-shared-metadata-9eeae1651da4

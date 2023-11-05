@@ -1,6 +1,5 @@
 = Domain-Driven Microservices
 
-:original: Domain-Driven Microservices
 :author: Ivan Macalák
 :length: 49:24
 :date: 12-11-2023

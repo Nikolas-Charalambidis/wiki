@@ -1,0 +1,34 @@
+= You Can Be Cloud Native, Too
+
+:link: https://springone.io/2021/sessions/you-can-be-cloud-native-too
+:author: Hananiel Sarella as Software Engineer, VMware
+:length: 27:00
+:date: 07-09-2021
+:language: English 🇺🇸
+:track: Beginner-Friendly Spring
+
+:rating: 3
+:pros: Broad overview of microservice architecture facilities and difficulties
+:cons: Missing introduction into cloud-native concepts since this is marked as beginner-friendly, too many buzzwords, .NET examples
+
+include::partial$session.adoc[]
+
+**Pros**: Microservice architecture provides easy-to-maintain, test, and deploy services, teams can be scaled, polyglot-friendly.
+
+**Cons**: Distributed systems are rather complex, and interaction is difficult to test, memory consumption and overhead.
+
+== Cloud-native patterns
+* Consistent management
+* Run everywhere
+* Secure
+* Seamlessly adopt new environments
+* Distributed systems patterns and abstractions.
+
+Steeltoe Project introduction on top of the .NET foundation enables building production-grade and cloud-native microsystems in a simplified way quickly to stand up.
+
+* Scalability (service discovery, configuration providers)
+* Resilience (circuit breaker, bulkhead, client-side load balancing)
+* Ease of Use (initializer, autoconfiguration, platform providers, and connectors such as DB, MQ, OAuth)
+* Observability (management endpoints, dynamic logging, distributed tracing, metrics)
+* Security (SSO, JWT auth, certificates)
+* Messaging (stream processing)
