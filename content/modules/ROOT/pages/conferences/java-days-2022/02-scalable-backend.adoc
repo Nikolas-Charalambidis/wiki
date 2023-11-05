@@ -1,0 +1,95 @@
+= Scalable backend
+
+:original: Škálovatelný backend
+:author: Roman Bouchner
+:length: 1:00:39
+:date: 12-11-2021
+:language: Czech 🇨🇿
+:quote: A universal truth about architecture does not exist and its design must be context-aware.
+
+:rating: 4
+:pros: Though it looked like an anti-microservice session, the reasoning was context-aware.
+:pros: Proof that microservices should not be always used.
+:cons: Some relevant code and Kibana logs (though data would be anonymized) from the project to be shown would be great.
+
+include::partial$session.adoc[]
+
+== Concept
+
+Though it is a modern concept to have multiple instances, it's required to know the main goals:
+
+* No downtime deployment, resiliency against HW failure, better performance (huge amount of users), and protection on high traffic.
+* Scaling doesn't mean increasing the number of nodes but minds the CPU and RAM as databases are resources demanding. Though, scaling assures high availability (HA).
+* Content worth reading: https://spoilerproxy.com/ and https://goodbackend.com/.
+
+**Context:** Small development team (also DevOps and testing), fast-paced product, strong focus on data consistency, simple architecture, infrastructure and code, simple error codes, and their handling.
+
+**Rules:** Backends are stateless and all states are in the database (including the locking), backends don't call each other (how to handle 504 timeouts?).
+
+**Idea:** Producer-consumer architecture (the BE manages data from the FE, sends it to a queue and the BE workers process them), the results processed in 3 seconds are returned synchronously, otherwise information about an upcoming notification is offered.
+
+== Solution
+
+Scalable monolithic architecture deploying the very same configurable JAR (favors easy development) through properties `api.enabled=true` and `worker.threads=1` and more layers as the properties switch if the JAR will serve as a Worker or the API REST (Main) service.
+
+In case the Main service decides it's going to take a lot of time, the request is sent into a queue from where Workers take and process them.
+
+=== Queue
+The queue is implemented by the PostgreSQL database as it assures the transactional manner, data consistency, and simple backups (Kafka is rather suitable for non-transactional data, for example, email notifications). The database is a single source of truth.
+
+* 1 record is represented by exactly one row (important).
+* Data: RequestId (for Kibana), UserRequestContext (user identification, JSON request), WorkerId, RequestParameters, State (`Waiting` -> `Processing` -> `Done`/`Error` -> `ErrorResolved`), Result, Error message.
+* `INSERT` into the database is easy, but `SELECT` cannot get everything as long as synchronization between the workers is required so the record is processed by exactly one worker only:
++
+[,sql]
+----
+BEGIN
+SELECT * FROM my_queue WHERE state='waiting' FOR UPDATE SKIP LOCKED LIMIT 1
+UPDATE my_queue SET state='processing' WHERE id = ...
+COMMIT;
+----
+
+* The stored JSON request assures that the request can be processed by a Worker regardless of its origin as it follows a defined format.
+
+=== Polling? Notifications?
+
+The problem was how often to poll the requests from the queue. Once a second or 10 seconds?
+
+* The neat solution is to notify other backends without actually calling them -> PostgreSQL notifications.
+* The PostgreSQL notifications are an in-built solution that and transactional and easy to use.
++
+[,shell]
+----
+pgsql NOTIFY <channel> <payload>
+pgsql LISTEN <channel>
+----
++
+This can be implemented into Java by a custom implementation:
++
+[,java]
+----
+pgListenerService.notify("worker", "params");
+pgListenerService.addServiceListener("worker", params -> { });
+----
+
+=== Database scaling for HA
+The main goal is high availability (HA), the idea behind says the dumber the database is, the easier it can be scaled.
+
+PostgreSQL is capable of having one primary database for reading and writing and a secondary one for reading only. Internally it uses WAL (Write-Ahead Logging) and physical transaction replication. Theoretically, the data can be available for reading with a tiny delay in terms of milliseconds, but it is useful for analytical and aggregation processing.
+
+=== Database scaling for multiple users
+
+Another goal is to avoid distributed databases as the development gets complex as well as its testing.
+
+The solution is to add more databases but in the way transactional communication is *never* required between them.
+A proper sharding implementation should assure that the relevant data always stay together in a single database (one company's data are only in a single database). With a new big customer and new cloud (shard), the same architecture and software can be used.
+It is required to implement a switch (here is possible to use Kafka, and RabbitMQ as long as the consistency is not what matters here, but a quick switching).
+It is also recommended to use UUID to distinguish company data for easy migration across the shards.
+
+=== Database migration
+It is not easy to rename columns or tables and it must happen in multiple steps as long as multiple versions of the application can use the same database schema.
+
+=== Error handling
+There is no sophisticated error handling required as no retries are implemented, the record just fails. If a problem persists for a longer time, it's worth taking a look at it.
+
+include::partial$session-impression.adoc[]

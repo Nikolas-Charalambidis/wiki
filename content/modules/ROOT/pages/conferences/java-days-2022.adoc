@@ -1,0 +1,45 @@
+= Java Days 2022
+
+[%header,cols="1s,2,2"]
+|===
+|#
+|#
+|Remark
+
+|Link
+|link:[https://www.javadays.cz/en/]
+|Website updates yearly
+
+|Location
+|Czech Republic, Prague 🇨🇿
+
+CineStar Černý Most
+|
+
+|Date
+|November 2022
+|
+
+|Languages
+|Mostly in Czech 🇨🇿
+
+Some in English 🇺🇸
+|
+
+|Fee
+|Yes
+|Online ccs $170 excl. VAT
+
+Onsite $255 excl. VAT
+
+|Records availability
+|Limited for 1-2 weeks after the event
+|Only for the registered users
+|===
+
+* xref:conferences/java-days-2022/01-keynote.adoc[]
+* xref:conferences/java-days-2022/02-scalable-backend.adoc[]
+* xref:conferences/java-days-2022/03-building-docker-images-with-spring-boot-maven-plugin.adoc[]
+* xref:conferences/java-days-2022/04-advanced-tips-and-tricks-for-productivity-in-intellij-idea.adoc[]
+* xref:conferences/java-days-2022/05-project-loom-virtual-threads-in-java-19.adoc[]
+* xref:conferences/java-days-2022/06-domain-driven-microservices.adoc[]

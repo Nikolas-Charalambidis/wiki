@@ -1,0 +1,142 @@
+= Building Docker images with Spring Boot Maven Plugin
+
+:original: Tvorba docker image pomocí Spring Boot Maven Pluginu
+:author: Jiří Pinkas
+:length: 35:22
+:date: 12-11-2021
+:language: Czech 🇨🇿
+:quote: Jib is simple and helps for transition to Buildpacks.
+
+:rating: 4
+:pros: Detailed and comprehensible overview of how to build Docker images using buildpacks. Jib mentioned and offered a simple alternative.
+:cons: I still love to write Dockerfiles, it's fun. Buildpacks are confusing in terms of underlying Java versions (compatibility matrix) and this was not explained.
+
+include::partial$session.adoc[]
+
+History:
+
+* 2011 - Heroku initiated buildpacks (dynos)
+* 2013 - Docker, Cloud Factory adopted Buildpacks
+* 2014 - Spotify Docker Maven Plugin
+* 2015 - Kubernetes, Cloud Native Computing Foundation (CNCF) established
+* 2018 - Jib 1.0, Cloud Native Buildpacks, CNCF Sandbox
+* 2019 - Podman 1.0.0
+* 2020 - Cloud Native Buildpacks -> CNCF Incubation
+
+Dockerfiles are no longer written by hand (though it is good to know how they work), nowadays it is mostly used the Spotify Docker Maven Plugin though there are more advanced tools:
+Jib plugin is the best choice for a corporate and Native (Spring Boot Maven Plugin) for hipsters.
+
+Spring Boot Maven Plugin is simple to use, the command `mvn spring-boot:build-image` downloads a builder image where the application is built and the result is a Docker image (it is required to have Docker installed and Docker daemon run) - the resulting image is **layered**.
+
+It is required to include the plugin:
+[,xml]
+----
+<plugin>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-maven-plugin</artifactId>
+</plugin>
+----
+
+There is Bellsoft Liberica JDK inside out-of-the-box for an unknown reason, though there are better JDK distributions.
+
+== Layered images
+
+Examples from infrequently to frequently changed parts: `spring-boot-loader`, `dependencies`, `snapshot-dependencies`, `application`
+Layers enable only the changed parts can be replaced: in case we change the `dependencies`, then at least the `spring-boot-loader` can remain the same. If we change the `application` part, only the `application` part is sent to the Docker registry or Kubernetes nodes.
+Layered JARs, images work with JIB or Builpacks and save the time between build and deployment (network traffic between Jenkins, Kubernetes nodes, etc.)
+
+== Buildpacks
+
+Buildpacks can be browsed at: https://github.com/orgs/paketo-buildpacks/repositories?q=jre and the configuration is in the `spring-boot-maven-plugin`.
+
+=== OpenJ9 Buildpack
+[,xml]
+----
+<configuration>
+    <image>
+        <name>TODO_IMAGE_NAME</name>
+        <buildpacks>
+            <buildpack>gcr.io/packet-buildpacks/eclipse-openj9:latest</buildpack>
+            <buildpack>paketo-buildpacks/java</buildpack>
+        </buildpacks>
+    </image>
+</configuration>
+----
+=== Paketo Builder
+The application build happens in the builder image, there are 3 builders out-of-the-box: `full`, `base`, and `tiny`.
+They differ in the number of libraries installed, though the most used one is `tiny`.
+It is possible to create your builder, though it is complicated and worth only for corporates where the implementation of such a builder must be certified security-wise.
+Jib also allows creating a custom builder more simply.
+[,xml]
+----
+<configuration>
+  <image>
+    <name>TODO_IMAGE_NAME</name>
+    <buildpacks>
+      <builder>paketo-buildpacks/builder:tiny</buildpack>
+    </buildpacks>
+  </image>
+</configuration>
+----
+The plugin also can push into the Docker registry:
+[,xml]
+----
+<configuration>
+  <image> ... </image>
+  <docker>
+    <publishRegistry>
+      <username>${docker.username}</username>
+      <password>${docker.password}</password>
+    </publishRegistry>
+  </docker>
+</configuration>
+----
+It is dumb the credentials must be specified right in the `pom.xml`, though it can be passed in the command line:
+[,xml]
+----
+mvn -Ddocker.username=TODO -Ddocker.password=TODO spring-boot:build-image
+----
+
+== Spring Boot 3
+The plugin is already built into Spring Boot 3:
+[,xml]
+----
+<configuration>
+  <image>
+    <name>TODO_IMAGE_NAME</name>
+    <buildpacks>
+      <buildpack>gcr.io/packet-buildpacks/bellsoft-liberica:9.9.0-ea</buildpack>
+      <buildpack>paketo-buildpacks/java-native-image</buildpack>
+    </buildpacks>
+    <env>
+      <!-- optional as long as the default values are sensible -->
+      <BP_JVM_VERSION>17</BP_JVM_VERSION>
+    </env>
+  </image>
+</configuration>
+----
+[,shell]
+----
+mvn spring-boot:build-image -Pnative
+----
+Paketo buildpacks have also CLI that can build the native images:
+[,shell]
+----
+pack build test_img --builder=paketobuildpacks/builder:base -e BP_JVM_VERSION=17
+----
+
+== Alternatives
+It is still possible to write Dockerfiles (a great tutorial is at spring.io/guides/topicals/spring-boot-docker).
+As long as we are not ready for Buildpacks, Jib is a good choice as it is really easy to use (`maven jib:build`) and a subsequent transition to buildpacks is not hard.
+We can also use Jib without Spring Boot.
+JLink is *not* a good alternative because it conflicts with the layered JARs concepts, as long as each application has its own JRE, so they cannot share the same layers.
+
+== Goals (regardless of the technology)
+* Layered images
+* Smaller images
+* CI/CD image builds
+* Distroless images
+
+Distroless images are without Linux distribution and contain only the application, though there is no `bash` to use in the container, it is smaller and safe from attacks.
+
+include::partial$session-impression.adoc[]

@@ -1,0 +1,16 @@
+= Conferences
+
+This page contains my notes from the attended conferences and watched online tech talks.
+The notes are captured as accurate as possible and I refrained from completing or explaining the session.
+It means I distance myself from taking responsibility for factual errors, and inaccuracies, though typos and language inaccuracies most likely occur:
+English is not my native language after all.
+
+All sessions are ordered in the chronological order in which I attended them.
+
+Though I rate each individual sessions, I don't include an overview of them for a good reason:
+The rating is mine and mine only and for myself only.
+Each of us has a different taste, interests, experiences, and expectations.
+Believe me or not, I have yet to experience a session where I felt the urge to leave (if this changes, I remove this line).
+
+I have to remark I am not the owner or author of the freely published videos or session talk.
+I always credit the presenter, and double-checked that the online publication of the personal notes complies with the conference or tech talk event code of conduct... if any.

@@ -1,0 +1,25 @@
+ifeval::['{pros}' != '']
+- ✅ {pros}
+endif::[]
+ifeval::['{pros2}' != '']
+- ✅ {pros2}
+endif::[]
+ifeval::['{pros3}' != '']
+- ✅ {pros3}
+endif::[]
+ifeval::['{cons}' != '']
+- ⛔ {cons}
+endif::[]
+ifeval::['{cons2}' != '']
+- ⛔ {cons2}
+endif::[]
+ifeval::['{cons3}' != '']
+- ⛔ {cons3}
+endif::[]
+
+:pros:
+:pros2:
+:pros3:
+:cons:
+:cons2:
+:cons3:

@@ -1,0 +1,28 @@
+= Keynote
+
+:original: Original name
+:author: Nikolas Charalambidis
+:length: 12:34
+:date: 03-12-2023
+:language: Czech 🇨🇿 English 🇺🇸
+:quote: Quote.
+
+:rating: 2
+:pros: Pros.
+:pros2: Pros.
+:pros3: Pros.
+:cons: Cons.
+:cons2: Cons.
+:cons3: Cons.
+
+include::partial$session.adoc[]
+
+== A
+
+A
+
+== B
+
+B
+
+include::partial$session-impression.adoc[]

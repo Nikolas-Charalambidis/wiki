@@ -1,0 +1,28 @@
+= Keynote
+
+:original: Produktivita práce v IntelliJ Idea - pokročilé tipy
+:author: Pavel Jetenský
+:length: 46:57
+:date: 12-11-2023
+:language: Czech 🇨🇿
+:quote: Quote.
+
+:rating: 2
+:pros: Pros.
+:pros2: Pros.
+:pros3: Pros.
+:cons: Cons.
+:cons2: Cons.
+:cons3: Cons.
+
+include::partial$session.adoc[]
+
+== A
+
+A
+
+== B
+
+B
+
+include::partial$session-impression.adoc[]
