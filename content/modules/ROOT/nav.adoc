@@ -3,6 +3,7 @@
 ** xref:bash/sed.adoc[]
 ** xref:bash/git.adoc[]
 * xref:docker/docker.adoc[]
+* xref:english/english.adoc[]
 * xref:intellij-idea/intellij-idea.adoc[]
 * xref:jira/jira.adoc[]
 * xref:kubernetes/kubernetes.adoc[]

@@ -1,0 +1,117 @@
+= English
+
+== Idioms and Phrases
+
+=== To be a primer on *something*
+- Basic information about something.
++
+> "I would definitely recommend some primer on actual programming."
+
+=== To be a work of art
+- Something made by an artist as a beautiful work of art. It can be used as irony.
+
+=== To be adamant
+- To be determined to keep an opinion or position.
++
+> The director was adamant: I can't raise your salary."
+
+=== To be bamboozled
+- To be tricked.
++
+> "He is completely bamboozled by their extreme cleverness and doesn't notice."
+
+=== To be big on *something*
+- To be interested in or enjoy something.
+
+=== To be devoid of **something**
+- To lack or be without something that is necessary or usual.
++
+> "He seems to be devoid of compassion."
+
+=== To be yellow-bellied
+- To have no courage, not brave, and easily frightened.
+
+=== To blow up on *someone*
+- To let someone know that something becomes furious or violent.
++
+> "The application blew up an error on me."
+
+=== To brag about *something*
+- To speak with pride about something one has done or something one possesses.
+
+=== To depart with *something*
+- To give up on something.
+
+=== To give *something* a spin
+- To give something a try.
++
+> "Let's give this one a spin."
+
+=== To grasp *something*
+- To understand something that is complicated or difficult.
++
+> "They don't grasp the implications of these changes."
+
+=== To have credentials
+- To have abilities and experience that make someone suitable for a particular job.
++
+> "This young man had great credentials and a very pleasant demeanor."
+
+=== To kick this *something* out of the ditch and get it going
+- To remove something not working well and get something new or fresh to work instead.
++
+> "Let's kick this container out of the ditch and get it going."
+
+=== To lump *something* together
+- To group something together
++
+> "They are lumped together with the troublemakers and basically written off."
+
+=== To make a case for *something*
+- To make an argument for something or explain why it should be done.
+
+=== To mangle up
+- To ruin, spoil, or go wrong.
++
+> "Wow, the endpoint seems to be mangled up somehow."
+
+=== To put forward *something*
+- To suggest or propose something.
++
+> "I am *putting forward* a question."
+
+=== To reiterate concisely: ...
+- To summarize in a way that is brief but comprehensive.
+
+=== To scram
+- To leave or go away.
++
+> "I usually have more free time to scram."
+
+- To shut down in an emergency.
+
+=== To spin up *something*
+- To power up, launch, or instantiate something.
+
+> "Let's spin up the application."
+
+=== To strike terror/fear into *somebody’s* heart
+- To make someone feel frightened.
++
+> "The third semester features economy, which strikes fear in the hearts of students for a good reason."
+
+=== To tweak *something*
+- To fine-tune, improve or debug something.
+
+=== To whine like a baby/bitch
+- To complain continually in a self-pitying way.
+
+== Quotes
+
+> "People don't change, they just become more of who they really are." 
+> 
+> -- Hugh Laurie as Dr. House
+
+> "Satire is essential: It’s the engine of any democracy. If a government wants to define itself as democratic, it must also behave as such to don’t pass as false and hypocritical."
+
+
