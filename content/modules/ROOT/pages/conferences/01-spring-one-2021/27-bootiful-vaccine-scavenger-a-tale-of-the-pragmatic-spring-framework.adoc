@@ -3,7 +3,7 @@
 :link: https://springone.io/2021/sessions/bootiful-vaccine-scavenger
 :author: Greg Meyer as Director, Distinguished Engineer, Cerner Corp.
 :length: 25:30
-:date: 2021-09-23
+:date: 23-09-2021
 :language: English 🇺🇸
 :track: Beginner-Friendly Spring
 

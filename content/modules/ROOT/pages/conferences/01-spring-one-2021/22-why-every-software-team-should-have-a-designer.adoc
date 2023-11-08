@@ -3,7 +3,7 @@
 :link: https://springone.io/2021/sessions/why-every-software-team-should-have-a-designer
 :author: Antonia Horvath as Delivery Lead & Design Manager, VMware Tanzu Labs
 :length: 24:15
-:date: 2021-09-16
+:date: 16-09-2021
 :language: English 🇺🇸
 :track: Agile Leadership
 :quote: There are high chances we don't yet know the full scope of value that design can deliver.

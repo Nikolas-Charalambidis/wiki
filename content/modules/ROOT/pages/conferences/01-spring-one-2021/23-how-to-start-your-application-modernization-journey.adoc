@@ -3,7 +3,7 @@
 :link: https://springone.io/2021/sessions/how-to-start-your-application-modernization
 :author: Steve Hawkins as Sr. Manager Converged Infrastructure, BT
 :length: 25:43
-:date: 2021-09-19
+:date: 19-09-2021
 :language: English 🇺🇸
 :track: Agile Leadership
 :quote: Don't be afraid to try different approaches to refactoring to determine what works.

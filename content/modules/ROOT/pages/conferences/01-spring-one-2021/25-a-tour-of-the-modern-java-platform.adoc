@@ -4,7 +4,7 @@
 :author: Bruce Eckel as President, Mindview LLC
 :author2: James Ward as Developer Relations Engineer, Google Cloud
 :length: 57:11
-:date: 2021-09-22
+:date: 22-09-2021
 :language: English 🇺🇸
 :track: Architecture
 

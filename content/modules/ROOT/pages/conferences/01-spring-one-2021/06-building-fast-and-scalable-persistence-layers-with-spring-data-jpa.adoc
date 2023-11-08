@@ -8,6 +8,7 @@
 :quote: Favour DTO interfaces projections without advanced techniques (SpEL, nested associations) for read-operations over managed entities.
 :track: Intermediate/Advanced Spring
 
+:rating: 5
 :pros: Practical workshop with an on-spot set of tips for working with Hibernate and Spring Data JPA effectively.
 :cons: An alternative to SpEL was introduced, but not to the nested association within advanced DTO projection.
 

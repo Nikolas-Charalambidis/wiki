@@ -3,7 +3,7 @@
 :link: https://springone.io/2021/sessions/how-to-use-kpis-in-an-agile-delivery-environment
 :author: Arijit Sarbagna as Director - Agile & DevSecOps, Atos
 :length: 24:15
-:date: 2021-09-14
+:date: 14-09-2021
 :language: English 🇺🇸
 :track: Agile Leadership
 :quote: When a measure becomes a target, it ceases to be a good measure. - Goodhart's Law

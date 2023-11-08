@@ -4,7 +4,7 @@
 :author: Nate Schutta as Architect, VMware
 :author2: Jakub Pilimon as Software Engineer, VMware
 :length: 59:45
-:date: 2022-02-21
+:date: 01-02-2022
 :track: Architecture
 :language: English 🇺🇸
 :quote: If you want to make somebody do something, make it easy.

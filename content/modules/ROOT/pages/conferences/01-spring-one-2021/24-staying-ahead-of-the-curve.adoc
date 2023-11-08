@@ -3,7 +3,7 @@
 :link: https://springone.io/2021/sessions/staying-ahead-of-the-curve
 :author: Trisha Gee as Lead Java Advocate, JetBrains
 :length: 54:20
-:date: 2021-09-22
+:date: 22-09-2021
 :language: English 🇺🇸
 :track: Beginner-Friendly Spring
 :quote: Create a culture of continuous learning in our environment.

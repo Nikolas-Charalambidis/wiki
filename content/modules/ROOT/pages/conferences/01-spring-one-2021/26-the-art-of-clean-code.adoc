@@ -3,7 +3,7 @@
 :link: https://springone.io/2021/sessions/the-art-of-clean-code
 :author: Chiamaka Okenwa as Software Engineer, Renmoney
 :length: 14:27
-:date: 2021-09-23
+:date: 23-09-2021
 :language: English 🇺🇸
 :track: Architecture
 :quote: Anyone can write code that a computer can understand. Good programmers write code that humans can understand - Martin Fowler

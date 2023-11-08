@@ -4,7 +4,7 @@
 :author: Dodd Pfeffer as Advisory Solution Engineer, VMware
 :author2: Partha Chandramohan as Solutions Architect, AARP
 :length: 25:16
-:date: 2021-09-28
+:date: 28-09-2021
 :language: English 🇺🇸
 :track: Architecture
 
