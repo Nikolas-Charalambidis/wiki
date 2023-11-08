@@ -5,8 +5,8 @@
 :length: 55:32
 :date: 11-09-2021
 :language: English 🇺🇸
-:quote: The queries must flow
 :track: Beginner-Friendly Spring
+:quote: The queries must flow
 
 :rating: 3
 :pros: Auditing introduction, very beginner-friendly

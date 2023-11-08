@@ -6,8 +6,8 @@
 :length: 22:58
 :date: 09-09-2021
 :language: English 🇺🇸
+:track: Architecture
 :quote: Contract testing allows API producers and consumers to work in a decoupled fashion.
-:tracl: Architecture
 
 :rating: 3
 :pros: Interesting overview of the extended testing pyramid.

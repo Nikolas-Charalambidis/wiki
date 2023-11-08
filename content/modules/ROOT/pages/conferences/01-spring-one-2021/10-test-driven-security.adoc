@@ -5,8 +5,8 @@
 :length: 22:25
 :date: 08-09-2021
 :language: English 🇺🇸
-:quote: Feature development is guided by writing failing tests first and then writing the minimal amount of code necessary to make a test pass.
 :track: Intermediate/Advanced Spring
+:quote: Feature development is guided by writing failing tests first and then writing the minimal amount of code necessary to make a test pass.
 
 :rating: 5
 :pros: Simple introduction to Spring security testing, TDD approach, OWASP mentioned

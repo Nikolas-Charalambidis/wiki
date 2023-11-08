@@ -5,8 +5,8 @@
 :length: 26:15
 :date: 08-09-2021
 :language: English 🇺🇸
-:quote: Container is process isolation.
 :track: Cloud Native Platforms
+:quote: Container is process isolation.
 
 :rating: 5
 :pros: Excellent explanation of the container and Linux kernel concepts, simple but nice workshop

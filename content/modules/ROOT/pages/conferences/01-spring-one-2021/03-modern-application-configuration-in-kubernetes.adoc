@@ -5,8 +5,8 @@
 :length: 26:49
 :date: 07-09-2021
 :language: English 🇺🇸
-:quote: Spring Cloud Config vs. K8S Config-maps and secrets.
 :track: Architecture
+:quote: Spring Cloud Config vs. K8S Config-maps and secrets.
 
 :rating: 5
 :pros: Very catchy speech, an excellent introduction to the environment properties management problem and comparison of approaches

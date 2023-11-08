@@ -7,8 +7,8 @@
 :length: 51:05
 :date: 08-09-2021
 :language: English 🇺🇸
-:quote: Spring Security integrates the Spring Native for all of its authentication mechanisms and all of its authorization models.
 :track: Beginner-Friendly Spring
+:quote: Spring Security integrates the Spring Native for all of its authentication mechanisms and all of its authorization models.
 
 :rating: 5
 :pros: Well-prepared, exhaustive and entertaining role-played scenario securing application step-by-step, key takeaways summary at the end.

@@ -6,8 +6,8 @@
 :length: 26:11
 :date: 11-09-2021
 :language: English 🇺🇸
-:quote: The 'Most Loved' database in StackOverflow's Developer survey for the 5th year in a row.
 :track: Beginner-Friendly Spring
+:quote: The 'Most Loved' database in StackOverflow's Developer survey for the 5th year in a row.
 
 :rating: 5
 :pros: Enthusiastic talk covering a wide range of Redis topics with practical examples with some ease.

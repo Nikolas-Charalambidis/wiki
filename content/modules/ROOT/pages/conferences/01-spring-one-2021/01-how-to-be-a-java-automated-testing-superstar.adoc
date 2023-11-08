@@ -5,8 +5,8 @@
 :length: 26:24
 :date: 07-09-2021
 :language: English 🇺🇸
-:quote: Write automated tests until they give me the confidence to deploy PROD without manual intervention.
 :track: Architecture
+:quote: Write automated tests until they give me the confidence to deploy PROD without manual intervention.
 
 :rating: 4
 :pros: Theoretical aspects and importance of testing, best practices of unit testing.

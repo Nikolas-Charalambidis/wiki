@@ -5,8 +5,8 @@
 :length: 27:12
 :date: 12-09-2021
 :language: English 🇺🇸
-:quote: Microservices architecture built using state-of-the-art Spring Boot and Cloud components.
 :track: Architecture
+:quote: Microservices architecture built using state-of-the-art Spring Boot and Cloud components.
 
 :rating: 5
 :pros: Great use-case talk, especially about technology and know-how of using custom Spring Boot autoconfiguration and replacing Spring Netflix.

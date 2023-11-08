@@ -1,0 +1,26 @@
+= The Art of Clean Code
+
+:link: https://springone.io/2021/sessions/the-art-of-clean-code
+:author: Chiamaka Okenwa as Software Engineer, Renmoney
+:length: 14:27
+:date: 2021-09-23
+:language: English 🇺🇸
+:track: Architecture
+:quote: Anyone can write code that a computer can understand. Good programmers write code that humans can understand - Martin Fowler
+:quote2: It is not enough to write the code well. The code has to be kept clean over time... Leave the campground cleaner than you found it - Boy Scout Rule, Robert C. Martin
+
+:rating: 1
+:pros: Very beginner-friendly and two fair quotes, though famous clichés.
+:cons: Extremely short talk although the topic itself is rich in ideas.  Nothing new compared to already well-known and widely presented blog posts.
+:cons2: What is the real meaning behind the "one reason to change" cliché?
+:cons3: Introducing `includeSetupAndTeardownPages` way is not a good idea as we might finally end up with `includeSetupAndRegisterAndLoginAndTeardownPagesUnformattedUTF8Encoded` etc.
+
+include::partial$session.adoc[]
+
+Clean code is *simple*, *understandable* and *maintainable* to care about *teamwork*, *reusability* and *growth*, is easy to read, focused, tested, and SOLID.
+
+* **Naming**: Use descriptive, clear, and searchable names that can be pronounced well and according to context ~ classes, functions, variables, everything.
+* **Functions**: They should be small, do one thing with as least as arguments possible, have one reason to change, and follow the single responsibility principle.
+* **Comments**: Avoid commenting out code chunks and use them only as a clarification of code as code is the best documentation itself.
+* **Classes**: Class name must be short, show its responsibility, and have only one responsibility and only one reason to change.
+* **Tests** Should be independent of each other, fast, executed in a short time, and have one assert per test.

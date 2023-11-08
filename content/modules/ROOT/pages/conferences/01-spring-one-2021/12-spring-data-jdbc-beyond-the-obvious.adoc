@@ -5,8 +5,8 @@
 :length: 52:39
 :date: 09-09-2021
 :language: English 🇺🇸
-:quote: Strong Aggregates as the main concept of Spring Data JDBC: Whatever is reachable from the root of the aggregates is part of that aggregates and gets persisted/loaded with that root.
 :track: Intermediate/Advanced Spring
+:quote: Strong Aggregates as the main concept of Spring Data JDBC: Whatever is reachable from the root of the aggregates is part of that aggregates and gets persisted/loaded with that root.
 
 :rating: 5
 :pros: Very informative session about not-too-known Spring Data JDBC, easy-to-understand examples

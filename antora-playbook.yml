@@ -26,3 +26,5 @@ ui:
 asciidoc:
   attributes:
     source-highlighter: 'coderay'
+  extensions:
+    - asciidoctor-kroki

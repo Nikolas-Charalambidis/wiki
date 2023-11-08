@@ -5,8 +5,8 @@
 :length: 25:34
 :date: 08-09-2021
 :language: English 🇺🇸
-:quote: Spring Framework 5.3.x remains in active development and Spring Framework 6.0 will be the beginning of a new generation.
 :track: Intermediate/Advanced Spring
+:quote: Spring Framework 5.3.x remains in active development and Spring Framework 6.0 will be the beginning of a new generation.
 
 :rating: 3
 :pros: Interesting overview of upcoming versions and timing

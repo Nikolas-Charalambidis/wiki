@@ -5,8 +5,8 @@
 :length: 27:31
 :date: 07-09-2021
 :language: English 🇺🇸
-:quote: Developer experience on DIY platforms is lacking.
 :track: Cloud Native Platforms
+:quote: Developer experience on DIY platforms is lacking.
 
 :rating: 2
 :pros: Beginner-friendly introduction, on-spot developer concerns identification.

@@ -1,0 +1,147 @@
+= Spring for Architects
+
+:link: https://springone.io/2021/sessions/spring-for-architects
+:author: Nate Schutta as Architect, VMware
+:author2: Jakub Pilimon as Software Engineer, VMware
+:length: 59:45
+:date: 2022-02-21
+:track: Architecture
+:language: English 🇺🇸
+:quote: If you want to make somebody do something, make it easy.
+:quote2: If you don't think managing state is tricky, consider the fact that 80% of all problems in all complex systems are fixed by rebooting. - Stuart Halloway
+:quote3: Architects cannot afford to be dogmatic, for example, I want my teams to write tests, so I don't care what they choose to write tests in. Do you like jUnit? Fantastic, use it. Do you like Spock? Wonderful, that's great... just because I want them to write tests."
+
+:rating: 4
+:pros: Great and informative content on implementing architectural patterns with Spring Boot.
+:pros2: Rich explanation of an event-driven architecture.
+:pros3: Brilliant quotes, and nice-to-listen presentation style.
+:cons: They were cut off and such a situation should have been handled better (both organizers and presenters).
+
+include::partial$session.adoc[]
+
+Things used to be simple, i.e. having few monoliths. Nowadays we have dozens, hundreds of services dropping daily new versions and a scattered team around the globe. Architects cannot and don't want to be involved in every single decision that teams have to make.
+
+* They have to **empower** our teams to make good decisions and embrace the notion of **distributed decision-making**.
+* They have to step in and **establish principles** to put on guardrails and guideposts to help teams make good decisions. A way to go is to **leverage the power of defaults**.
+
+From observations, distributed systems have similar needs and a lot of things come up over and over: Monitoring, circuit breakers, consumer-driven contracts, gateways, streams, externalized configuration, functions, service discovery, load balancing, documentation -> we cannot reinvent the wheel on every single project and the focus should be led on critical design decisions while empowering teams to solve critical business problems.
+
+== Twelve-factor app
+They are characteristics shared by successful apps (by Heroku).
+
+. One codebase in version control, multiple deploys
+. Explicitly defined dependencies
+. Configuration separated from the code
+. Backing services are just attached resources (trivial swap out, loose coupling)
+. Build, release and run lifecycle
+. Stateless (durable, not in memory)
+. Export services via port binding
+. Scale via process (to scale horizontally)
+. Start up fast and shut down gracefully (all in seconds, apps need to be disposable)
+. Dev/Prod parity (from commit to production)
+. Treat logs as event streams (no file system)
+. Admin tasks run as one-off processes (database migrations etc.)
+
+Does an application have to be fully 12-factor compliant?
+Nope, but should be a goal but be also ruthlessly pragmatic.
+**Think of it as a continuum:** Applications need to be designed properly to take the advantage of that.
+
+For greenfield applications, go cloud native and don't build a legacy.
+
+== Monitoring
+
+**Monitoring** is vital to a thriving distributed architecture to know what is going on. Four primary components:
+
+* Logging in to know what happened.
+* Tracing (correlation) -> Spring Cloud Sleuth. It covers spans, sampling, and key:value pairs, it adds trace and span IDs, and stock ingress and egress points instrumented and generated Zipkin compatible traces if desired.
+* Dashboards to view the health of service and monitor key metrics involving usually infrastructure (CPU, RAM, threads, DB connections, availability, latency, response time, etc. identified earlier as part of the SLO (service level objectives)). Also the traffic level and error-failed requests etc.
+* Alerts to alert then something goes wonky and fix it ideally before the customers even notice. It means pager duty for what there has to be clear and concise on-call duty documentation. Alerts should be urgent, actionable, and require human intervention.
++
+> "'We don't rise to the level of our expectations, we fall to the level of our training' - Archilochus"
+* Number of tools from Wavefront to Dynatrace to New Relic -> Spring Boot Actuator.
+
+=== Spring Boot Actuator
+
+It is needed to use Spring Web dependencies from Initializr to enable the HTTP communication (JMX is yet another option).
+
+* `/actuator/beans`: The information about beans including their scope and type provided by the application
+* `/actuator/env`: The classpath, Java vendor, timezone, OS, etc.
+* `/actuator/caches/:` The caches
+* `/actuator/mappings` The HTTP mappings
+* `/actuator/scheduledtasks`: The scheduled tasks
+* `/actuator/shutdown`: To shut down the application gracefully
+
+It is possible to include Spring Security to secure the endpoints.
+It is possible to configure the custom actuator endpoints using the annotations: `@Endpoint`, `@JmxEndpoint`, `@WebEndpoint`, `@ReadOperation`, `@WriteOperation`, etc.
+
+**All endpoints are enabled but not exposed by default**, which means they are by default included by the actuator.
+[,properties]
+----
+management.endpoint.shutdown.enabled=true
+management.endpoints.web.exposure.include=*
+----
+
+== Fault tolerance
+
+* We cannot prevent failure, but we can be prepared for it.
+* How to react? Error message? Backup service? Rely on cached data? Return default answer? ... *it depends*.
+* A circuit breaker is a good way to go as it watches the calls and makes sure that something that is broken doesn't get continually called.
+* Once the failure threshold is exceeded, the circuit is open and you can't complete the circuit anymore, and it redirects to a fallback mechanism. Every so often it pokes the original service if it is healthy yet, so let's back to normal and close the circuit.
+* Circuit breakers are vital for healthy microservices, easy to add and customers would thank you or they don't notice at all.
+* It is better to display the user a manual error quickly than let them wait for a long time to fail and very rarely succeed.
+
+=== Spring Cloud Circuit Breaker
+It has a consistent API and allows developers to pick the implementation: Netflix Hystrix, Resilience4j, Sentinel, Spring Retry (`org.springframework.cloud`:`spring-cloud-starter-circuitbreaker-resilience4j`).
+
+* All can be configured as necessary and all provide a basic default configuration.
+* Free to change value thresholds, slow call thresholds, and sliding window size.
+* link:https://httpd.apache.org/docs/current/en/programs/ab.html[Apache Benchmark] is a simple command line tool for benchmarks.
++
+[,bash]
+----
+ab -n 100 http:localhost:8080/evaluate
+----
+* Configuring a circuit breaker is done through `CircuitBreakerConfig` with either a default configuration `ofDefaults()` or a custom one (`custom()`).
++
+[,java]
+----
+CircuitBreakerConfig.custom()
+    .failureRateThreshold(5)                          //several consecutive failing values require to open the circuit
+    .waitDurationInOpenState(Duration.ofMillis(1000)) // duration in the open state
+    .slidingWindowSize(2)                             // used to record the outcome of calls when the circuit breaker is closed
+    .build()
+----
+
+== Event-driven architecture
+It has multiple event patterns. Which to choose? ... *it depends*, it's all about trade-offs.
+
+* *Event notification* (for example a new client registration):
+** Something happens and the system shouts into the void (like banging a cowbell), and the emitter usually doesn't care what happens the next.
+** This is great for being highly asynchronous and compliant with the 0th law of computer science: High cohesion and low coupling.
+** The downside is that it is difficult to debug, to reason about the system, and easy to lose sight of the flow - that's why monitoring is crucial.
+* *Event-carried state transfer* (for example a client changed his address):
+** The event carries the detail so the event subscribers don't need to ask for the details, and it is an example of "tell, not ask".
+** It reduces latency and lowers the overhead to the source systems (it doesn't mean the data get tossed around), and receivers need to handle the state.
+* *Event sourcing*:
+** We record every single state change, so it turns out that the event store is the record of truth and not the database.
+** Kafka is a friend for this as it serves as a strong audit log, allows to recreate history, and makes it easy to run hypotheticals, although evolving schemas can be painful. It is challenging to replay when we interact with outside systems.
+* *CQRS* as Command Query Responsibility Segregation:
+** It splits the data structure into one that reads and the one that writes, which is not necessarily event-driven per se but you sort of see it combined with these approaches.
+
+=== How to do distributed transactions in the cloud?
+
+*They don't.*
+A real-world example:
+
+You buy a t-shirt in a shop with a return policy.
+The shop doesn't keep the transaction open until the return period expires.
+The sale is committed, if you return a t-shirt, there is a series of compensating transactions (put the t-shirt into inventory, issue you a credit, etc...).
+
+=== Spring Cloud Stream
+It is for architects that want flexibility because the architecture is often defined as the decisions that are hard to change.
+
+* Spring Cloud Stream allows swapping brokers and using what's right for the team, so is middleware neutral.
+* It supports as expected: Kafka, RabbitMQ (`org.springframework.cloud`:`spring-cloud-starter-stream-rabbit`), Kinesis plus various partner-maintained bits.
+* It provides a binder to the external brokers that serve as a bridge between the application and the broker.
+* It allows us to implement our binder and integration-test them.
+* Destination binder connects to your messaging system, and handles the boilerplate configuration bits, so one can focus only on the business problem.
