@@ -1,0 +1,46 @@
+= AsciiDoc
+
+== Diagrams
+
+:label: PUML and other diagrams
+:date: 08-11-2023
+:source: link:https://github.com/asciidoctor/asciidoctor-kroki[GitHub: asciidoctor-kroki]
+include::partial$item.adoc[]
+
+. Install the extension:
++
+[,shell]
+----
+yarn add asciidoctor-kroki
+----
+. Enable the extension in `antora-playbook.yml`.
+Beware, it is `asciidoc` extension, not `antora` extension, just add another key:
++
+[,yml]
+----
+antora:
+  extensions:
+    ...
+asciidoc:
+  extensions:
+    asciidoctor-kroki
+----
+
+Now, there are two choices:
+
+. Refer to a partial with the `puml` file extension:
++
+[,adoc]
+ [plantuml,target=ab-partial-1,format=svg]
+ ----
+ include::partial$puml/alice-bob.puml[]
+ ----
+
+. Write down the `puml` code and render it directly:
++
+[,adoc]
+ [plantuml,ab-partial-all-1,svg]
+ ----
+ alice -> bob
+ bob -> alice
+ ----
