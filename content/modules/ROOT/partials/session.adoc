@@ -1,0 +1,89 @@
+
+[cols="1,4"]
+|===
+ifeval::['{original}' != '']
+|Original name
+|{original}
+
+endif::[]
+ifeval::['{link}' != '']
+|Link
+|{link}
+
+endif::[]
+|Author(s)
+|{author}
+ifeval::['{author2}' != '']
+
+{author2}
+endif::[]
+ifeval::['{author3}' != '']
+
+{author3}
+endif::[]
+
+|Length
+|{length}
+
+|Date
+|{date}
+
+|Language
+|{language}
+
+ifeval::['{track}' != '']
+|Track
+|{track}
+
+endif::[]
+|Rating
+ifeval::[{rating} == 0]
+|☆☆☆☆☆
+endif::[]
+ifeval::[{rating} == 1]
+|⭐☆☆☆☆
+endif::[]
+ifeval::[{rating} == 2]
+|⭐⭐☆☆☆
+endif::[]
+ifeval::[{rating} == 3]
+|⭐⭐⭐☆☆
+endif::[]
+ifeval::[{rating} == 4]
+|⭐⭐⭐⭐☆
+endif::[]
+ifeval::[{rating} == 5]
+|⭐⭐⭐⭐⭐
+endif::[]
+|===
+
+include::partial$session-impression.adoc[]
+
+ifeval::['{quote}' != '']
+> "{quote}"
+endif::[]
+
+ifeval::['{quote2}' != '']
+> "{quote2}"
+endif::[]
+
+ifeval::['{quote3}' != '']
+> "{quote3}"
+endif::[]
+
+// reset the variables
+:date:
+:language:
+:length:
+:link:
+:author:
+:author2:
+:author3:
+:original:
+:quote:
+:quote2:
+:quote3:
+:rating:
+:track:
+
+---

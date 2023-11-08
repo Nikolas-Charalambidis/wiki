@@ -1,0 +1,60 @@
+= Live Coding Spring, Kafka, & Elasticsearch: Personalized Search Results on Ranking and User Profile
+
+:link: https://springone.io/2021/sessions/spring-kafka-elasticsearch
+:author: Erdem Günay as CTO, Layermark
+:length: 26:42
+:date: 13-09-2021
+:language: English 🇺🇸
+:track: Architecture
+
+:rating: 4
+:pros: Informative overview of what Elasticsearch is capable of, although the live demo is impossible to follow but still impressive
+:cons: The way result popularity in real-time was updated from Kafka was not clearly explained.
+:cons2: It's not clear why Kafka figures in the demo if an easier approach could be used
+:cons3: Data structure should be shown as not everybody has experience with Elasticsearch (all because I guess mostly caused by lack of time)
+
+include::partial$session.adoc[]
+
+== ElasticSearch Analyzers
+By default, ElasticSearch finds by an exact match, to enable easy search using a single letter ignoring accented characters (`é`, `í`, etc...) it is needed to use ElasticSearch Analyzers utilizing `POST _analyze` with `"tokenizer": "standard"` and `"char_filter"` with `pattern_replace` "type` to replace anything that is not an alphanumeric character.
+
+To get rid of capital letters and non-ASCII characters, it is needed to add token:
+[,json]
+----
+"filter" : ["asciifolding", "lowercase"]
+----
+...and a specific `edge-ngram` among them.
+
+It is needed to delete the former index and recreate the index.
+
+Each `hit` has a `_score` that sets the element order in the returned structure.
+
+For search by fields, it is possible to add *boosting*, ex. boost the search of artist name `artist_name` by a factor of 5 (exact match should have a bigger score) as `artist_name^5` or `artist_name.prefix^1` where are the generated tokens stored.
+
+`"fuzziness" : 1` enables to match other elements (ex. `"query": "sezan"` would match `Selena Gomez` with a low `_score` since there is a partial match in individual letters from search (basically allows typos).
+
+== Boosting results by popularity
+If the search is based on a single letter (`s`), `Shakira` might be placed below `Selena Goméz` although the popularity says otherwise (I like Shakira more, though). It is needed to enable scoring on a search through `POST /content/_search` and provide `"script_score"` in `"functions"` in `"function_score"` in `"query"`: `
+[,json]
+----
+"script" : {
+    "source" : "Math.max(((!doc['ranking'].empty )
+        ? Math.log10(doc.['ranking'].value)
+        : 1), 1)",
+    "lang" : "painless"
+}`
+----
+
+Assuming the popularity is updated programmatically (200 asynchronous hits by Kafka) it is needed to process the listen-event messages and place them in listen-event indices using: `POST /listen-event-*/_search/`. User profiles are also getting generated (`POST /user-profile/_search`).
+
+== Boosting by user behavior
+If a particular user searches for a certain element, that element should be boosted in the search for that particular user only. Another function must be taken into account similarly as previous boosting:
+[,json]
+----
+"script" : {
+    "source" : "params.boosts.get(doc[params.artistIdFieldName].value)",
+    "lang" : "painless",
+    "params" : { ..
+    }
+}
+----

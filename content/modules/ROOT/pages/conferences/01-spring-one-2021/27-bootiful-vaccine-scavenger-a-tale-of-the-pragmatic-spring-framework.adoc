@@ -1,0 +1,72 @@
+= Bootiful Vaccine Scavenger: A Tale of the Pragmatic Spring Framework
+
+:link: https://springone.io/2021/sessions/bootiful-vaccine-scavenger
+:author: Greg Meyer as Director, Distinguished Engineer, Cerner Corp.
+:length: 25:30
+:date: 2021-09-23
+:language: English 🇺🇸
+:track: Beginner-Friendly Spring
+
+:rating: 5
+:pros: A very impressive tale o a real application built on top of well-suited technologies able to ship into production quickly.
+:pros2: Introduction of Spring Cloud projects and alternatives.
+:cons: Incorrect usage of Stream API with a side-effect.
+:cons2: Lack of time for deployment.
+
+include::partial$session.adoc[]
+
+Taking an existing open-source Python project and then enhancing it and rapidly converting it into a production-grade application with the use of Spring:
+
+* **Vaccine spotter** is an application that allows you to pick up a location by a ZIP code and shows all the appointments available at local retail pharmacies with external REST API.
+* **Vaccine watch** is a Python bot application to query out to a specific region for un/available appointments and publishes those results out to social media networks like Twitter or Slack.
+
+== JWatch application
+
+=== Architecture
+
+The whole application is divided into a *Consumer* and *Supplier* on top of the common Spring Boot Configuration.
+
+* **Supplier** contains web clients to continuously call appointment APIs (Vaccine Spotter API and Proprietary Clinic API). The transformed business objects are handed up the stack o determine whether a particular appointment has already been published to our social media networks and then the state of that is stored inside Redis. A  RabbitMQ queue is fed by appointments.
+* **Consumer** consumes RabbitMQ queue to push notifications to Twitter, Slack, and Email.
+* **Spring Boot** configuration profiles and conditional beans are used to enable/disable functionality inside the application so we could deploy separate instances of the application.
+* **RabbitMQ** is used, although it is a single application to break down the concern and make the application deployable.
+
+=== Implementation
+
+The main `JVWatchAppliatinon` class is annotated with `@SpringBootApplication`, `@EnableReactiveFeignClients`, `@EnableRedisRepositories`, and `@EnableConfigurationProperties`.
+
+`RestTemplaete` class has effectively been deprecated in favor of configurable `WebClient` implementing reactive programming paradigm. Another way is using a reactive non-blocking Feign client through `@ReactiveFeignCient` annotation or Retrofit HTTP client as a part of the Spring Cloud Square project (incubator project as of the time of writing).
+
+Feign client URL can be either hard coded, parameterized as a hardcoded URL, or a service name that interacts with some service discovery frameworks like Eureka.
+
+Spring Cloud Streams framework can abstract us from knowing of implementation details of the underlying messaging system - the redesigned framework aligned with the Spring Cloud Functions framework which itself aligns with Java 8.
+
+RabbitMQ (can be replaced with Kafka) is configured through `spring.cloud.stream.*` properties, `spring.cloud.stream.function`, `spring.cloud.stream.bindings`:
+
+[,properties]
+----
+spring.cloud.stream.poller.fixed-delay=${jvwatch.checkTask.period}
+spring.cloud.stream.function.definition=vaccineClinigDataSupplier;vaccineClinicDataSink
+spring.cloud.stream.bindings.vaccineClinicDataSupplier-out-0.destinatnion=jvwatch-clinic-data
+spring.cloud.stream.bindings.vaccineClinicDataSink-in-0.destinatnion=jvwatch-clinic-data
+spring.cloud.stream.bindings.vaccineClinicDataSink-in-0.group=jvwatch-clinic-data-sink-group
+spring.cloud.stream.bindings.vaccineClinicDataSink-in-0.consumer.concurrency=1
+spring.cloud.stream.bindings.vaccineClinicDataSink-in-0.consumer.maxAttempts=4
+spring.cloud.stream.bindings.vaccineClinicDataSink-in-0.consumer.backOffInitialInterval=15000
+spring.cloud.stream.bindings.vaccineClinicDataSink-in-0.consumer.backOffMaxInterval=60000
+----
+
+There are defined beans `@PollableBean Supplier<Flux<ClinicData>> vaccineClinicDataSupplier()` and `@Bean Consumer<ClinicData> vaccineClinicDataSink()` where `@PollableBean` means that the supplier function gets executed on a configurable interval and its returned object then gets mapped into a messaging object that's bound to a destination like a topic ora queue in the underlying messaging system.
+
+Spring Boot configuration allows configuration files with properties prefixes such as:
+
+[,java]
+----
+@Configuration
+@Configuration(prefix="jvwatch.notifications.twitter.oauth")
+@Data
+public class TwitterConfigProperties {
+
+    // Code
+}
+----

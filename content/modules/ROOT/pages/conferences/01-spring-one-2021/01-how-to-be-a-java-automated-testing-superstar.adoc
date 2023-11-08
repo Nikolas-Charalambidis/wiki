@@ -1,0 +1,28 @@
+= How To Be a Java Automated Testing Superstar
+
+:link: https://springone.io/2021/sessions/how-to-be-a-java-automated-testing-superstar
+:author: Billy Korando as Java Developer Advocate, Oracle
+:length: 26:24
+:date: 07-09-2021
+:language: English 🇺🇸
+:track: Architecture
+:quote: Write automated tests until they give me the confidence to deploy PROD without manual intervention.
+
+:rating: 4
+:pros: Theoretical aspects and importance of testing, best practices of unit testing.
+:cons: Too short (not the speaker's fault), code examples weren't that impressive, no mention of link:https://en.wikipedia.org/wiki/Behavior-driven_development[BDD] approach.
+
+include::partial$session.adoc[]
+
+Automated tests should be human-readable and treated as same as the production code. They are repeatable and auditable.
+
+**Dependency iceberg** says that our code is just a tip of all the code the application runs on.
+The dependencies are below.
+
+Most of the code are dependencies, feature and performance enhancements (Spring libraries, JSON/XML mappers, ORM implementation, servlets, etc.), and security patches.
+
+We cannot rely 100% on it, especially if we use the last stable versions. On the other hand, old versions have security flaws (Struts).
+
+How many automated tests should I write? Whatever gives me the confidence to deploy PROD without manual intervention (i.e. code coverage is just informative).
+
+Manual testing is still needed, but it is exploratory testing.

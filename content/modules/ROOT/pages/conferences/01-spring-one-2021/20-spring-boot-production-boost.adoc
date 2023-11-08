@@ -1,0 +1,56 @@
+= Spring Boot—Production Boost
+
+:link: https://springone.io/2021/sessions/spring-boot-production-boost
+:author: Thomas Vitale as Senior Software Engineer, Systematic
+:length: 26:09
+:date: 14-09-2021
+:language: English 🇺🇸
+:track: Beginner-Friendly Spring
+
+:rating: 4
+:pros: A handful overview of Spring Kubernetes and production-friendly features that Spring Boot Actuator provides out-of-box.
+:cons: The application could be ready to save some time (although the gist of the talk is to highlight quick rollout to production).
+
+include::partial$session.adoc[]
+
+If Flyway should be used with a Reactive application, it is needed to provide a JDBC connection to Flyway as it doesn't support R2DBC drivers.
+
+== Spring Actuator
+This exposes all endpoints, although it is better to make a selection:
+[,properties]
+----
+ management.endpoints.web.exposure.include=*
+----
+
+* `GET /actuator/health` is a base health endpoint including components (Database), liveness, and readiness needed especially for Kubernetes.
+** Liveness if `DOWN`, Kubernetes restarts the container because it means it entered into a faulty state
+** Readiness if `DOWN` means that the application cannot handle more requests so Kubernetes stops sending traffic to that specific instance
+* GET /actuator/flyway` returns all the information regarding the migrations, stored in database relation `flyway_schema_history` with all the migration statuses that have been run.
+* GET /actuator/prometheus` returns useful metrics about the application easy to scrap from the Prometheus server and show them in dashboards such as Grafana.
+ `GET /actuator/heapdump` creates a snapshot of heap memory to investigate ex. memory leaks and fix memory issues.
+
+== Packaging
+
+Gradle is in examples but for Maven it works the same.
+
+`./gradlew bootJar` packs the application as a fat jar, a standalone jar with all the dependencies needed by the application to run correctly with no external dependency except the JVM, which is easily deployable to cloud platforms like Heroku or Azure.
+
+To make the application even more portable and deployable on a platform like Kubernetes, it is possible to package the application as a container image using `./gradle bootBuildImage`.
+
+Spring Boot Plugin uses under-the-hood cloud-native build backs which is a specification to convert application source into container images without a need to provide a Dockerfile (Spring uses `packeto-buildbacks` implementation to produce production-ready images good for security and optimized for both building and running).
+
+*Java Memory Calculator* is included in the final image and configures heap and non-heap memory of the JVM running in the container at start-up.
+
+=== Properties configuration
+Property files for a local development environment but Spring Ecosystem provide also has different strategies
+
+A good strategy is that property files define the default value used in the deployment environment (URL to the local DB), for all properties not related to the infrastructure used Configuration Services like Spring Cloud Config (connection pools, timeouts, and retries, feature flags, external services with URLs, usernames and passwords, or PAAS specific properties), and Kubernetes specific properties with Spring Active Profiles and internal services (URLs, usernames, and passwords) use K8S Config Maps and Secrets.
+
+**Configuring Resources for JVM containers**
+
+* CPU: Is a compressible resource and throttles when its limit is hit - application still runs.
+* Memory: It is not a compressible resource and is OOMKilled when its limit is killed - application crashes
+* It is recommended to set in `containers` K8S YAML configuration `resources.requests.memory` and `resources.requests.cpu` and `resources.limits.memory` to assign minimum values to the container - it is also a good practice to set `requests` and `limits` values equal to guarantee the best performance.
+* To get some start-up boost it is possible to omit the CPU limit as long as we know it is a compressible resource.
+
+Remember to set liveness and readiness probes in K8S YAML configuration `containers.livenessProbe` and `conainers.readinessProbe` - especially `httpGet.path`, `httpGet.port`, `initialDelaySeconds` and `periodSeconds`.

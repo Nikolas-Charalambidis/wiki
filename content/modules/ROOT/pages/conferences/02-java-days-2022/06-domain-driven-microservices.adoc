@@ -1,0 +1,137 @@
+= Domain-Driven Microservices
+
+:author: Ivan Macalák
+:length: 49:24
+:date: 12-11-2023
+:language: Czech 🇨🇿
+:quote: The used language should be ubiquitous.
+
+:rating: 3
+:pros:  A necessity of a ubiquitous language is highlighted: the session demonstrated how the Domain-Driven Design is coupled with Microservice Architecture.
+:cons: Too theoretical and abstract, it would be nice to show a sample core, generic and supporting domain designed in detail.
+:cons2: The relationship between subdomain categories/types was not explained at all.
+
+include::partial$session.adoc[]
+
+Domain Driven Design is an approach to software development that helps us to break down a complex system into loosely coupled components with well-encapsulated logic and clearly defined dependencies among them.
+
+It's needed to have a *strategy* that matches the architecture.
+
+== Domain
+
+Domain is a sphere of knowledge represented by the *ubiquitous language* and encapsulates a domain model and bounded context.
+It is a conceptual model of the domain.
+
+=== Ubiquitous language
+
+Ubiquitous language is important as analysts and developers should use the same language and the same terms.
+
+* It is shared language between the business and development teams.
+* The language comes from the business and is enriched by the development team.
+*Domain dictionary defines many terms that in/directly help to form the domain.
+
+=== Bounded context
+
+Bounded context defines the problem boundaries (for the meaning of a given Domain Model) and enables decomposing into smaller parts.
+
+* Complex business domain consists of several Bounded Contexts.
+* Each Bounded Context contains a **Domain Model**.
+
+=== Context map
+
+Context map is a set of dependencies between Bounded Contexts, though they are encapsulated, they still need to react with each other.
+The Context Map gives *meaning* to Bounded Contexts.
+For example Smart building management:
+
+* Building management → Occupant (Name, Floor, Flat number, Relations), Room, Energy consumption...
+* User profile → User (Name, Favourites, Contacts, Payment methods, Invoice address), Payment details, Address...
+* Incident management → Reporter (Name, Email, Phone), Issue, Elevator
+* Authorization → User (Username, Email, Password, Roles), Role credential...
+* Equipment → Sensor, Elevator, Actuator...
+
+=== Domain vision statement
+
+Domain vision statement is important to use common, factual, realistic, honest, clear, and understandable language (ex. what is the occupant).
+
+* Avoid superlatives, and avoid marketing and technical/implementation language.
+* There are required domain experts: Either hire an external one or train an internal employee.
+
+=== Contribution
+
+Contribution is a common understanding, improves collaboration, leads to meaningful software design, and tackles complexity with a systematic approach.
+
+== Subdomains
+
+Subdomains are grouped into 3 categories and they interact with each other (source: https://pbs.twimg.com/media/FKIT_MnXMAYm2I7?format=jpg&name=4096x4096).
+
+=== Generic
+
+Generic does not contain anything special to the organization but is still needed for the overall solution (OSS, Identity, and Access management).
+
+* *Reduces integration costs* of the *supporting* subdomain: Adjusting open-source or vendor solutions is our needs become expensive, so we build it ourselves.
+* *Opportunity* to the *core* subdomain: Buidling best-in-class as-a-service solution for something eveyone was doing in-house.
+
+=== Supporting
+
+Supporting is necessary for the organization to succeed, but it does not fall into the core domain category (Incident management).
+
+* *Commoditization* of the *generic* subdomain: Maintaining an in-house supporting tool becomes a burden.
+* *Opportunity* to the *core* subdomain: Adding new capabilities to our boring CRUD starts generating revenue.
+
+=== Core
+
+Core is what makes an organization special and different from other organizations. An org. cannot succeed/exists without being exceptionally good in their core domain (Building management).
+
+* *Commoditization* of the *generic* subdomain: Switching to the open-source solution that outperforms our differentiator.
+* *Simplification* of the *supporting* subdomain: Reducing effort and simplifying it as it's not a differentiator anymore.
+
+== Strategic design (what)
+
+Do we understand business processes and operations? Which operations a system has to perform to accomplish its goal?
+
+The knowledge shall be acquired by both domain experts and developers.
+
+=== Strategic design patterns
+
+* Cooperation:
+** Partnership: `(A) --- (B)`
+** Shared kernel: `(A (  ) B)`
+* Consumer-supplier:
+** Conformist: `(A) → (B)`: `A` takes a model of `B`
+** Anti-corruption layer: `(A)[ACL] → (B)`: `B` change has no impact on `A`
+** Open-host service: `(A) → [OHS](B)`: `B` defines data exchange format (`B` provides API to `A`)
+* No-collaboration:
+** Separate ways: `(A) x (B)`
+
+== Tactical design (how)
+
+Defines Domain Model, Entities, Value Objects, Aggregates, Domain Events, Repositories, Services...
+
+**Aggregate** is a transaction consistency boundary, that contains root entity and sub-entities, for example, floor (equipment, room (doors, windows), and additional properties)). All the aggregate components should be in the boundary of the bounded context (due to transaction reasons should not touch outside).
+
+== Domain model pattern
+
+----
+project/
+├─ application/
+│  ├─ api/
+│  ├─ service/
+├─ domain/
+│  ├─ model/
+├─ infrastructure/
+│  ├─ messaging/
+----
+
+== Q&A
+
+* How a microservice should be big?
++
+> The size is not determined by the number of lines but by the number of operations, subdomain integrations, context, etc. The Domain Driven Design reveals how the microservice will be big and not vice versa.
+* Is the Domain Driven Design a waterfall?
++
+> The strategic design becomes a most likely waterfall, but as long as it's flexible, agile is possible. Usually, the first 10 iterations should be in the waterfall style and the rest can be managed in an agile way.
+* Where is the boundary between Domain Driven Design and technical design?
++
+> There are no exact boundaries.
+
+include::partial$session-impression.adoc[]

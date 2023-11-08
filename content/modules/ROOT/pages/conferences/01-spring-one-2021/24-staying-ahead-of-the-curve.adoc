@@ -1,0 +1,60 @@
+= Staying Ahead of the Curve
+
+:link: https://springone.io/2021/sessions/staying-ahead-of-the-curve
+:author: Trisha Gee as Lead Java Advocate, JetBrains
+:length: 54:20
+:date: 2021-09-22
+:language: English 🇺🇸
+:track: Beginner-Friendly Spring
+:quote: Create a culture of continuous learning in our environment.
+
+:rating: 5
+:pros: An helpful presentation providing reasons and approaches to why, where, and how should we learn new technologies to not panic.
+:cons: I still panic.
+
+include::partial$session.adoc[]
+
+Developers like to update to the latest and greatest technologies because it's fun to do, and it's hard to be immune to this disease, For example, applying a new technology results in the application would look like before, but hopefully it might have slightly better performance, however:
+
+* We can't measure performance until it's implemented.
+* New technologies have limited documentation.
+* I wanted to use a niche implementation... if I succeed, I'd be *the expert*.
+
+== Why
+*"Fear of missing out"* leads us, so we should forget all of that, release the fear, and think of the real reasons:
+
+=== For the business
+* Some technologies gain popularity and some eventually die off, which is good news as we don't need to learn all technologies to make a decision on which ones to use going forward.
+* Invest time in two or three technologies to see how they work and observe which stick around for a longer time, so pick up them in a new project as they become more relevant.
+* For example, a data set is irregular and a relational database is not suitable to represent these data drives a need to learn a document database technology like MongoDB or a graph database like Neo4j where relationships are more important than the data itself.
+* *Approach*: Build spikes/prototypes and start using non-production code first (build, deploy, CI/CD, test) such as internal tools or a new project/service, and it's important to share the knowledge and possibly get the experts if needed.
+
+=== For the team
+* Usually, releases are painful and lengthy, and introducing the correct tools and processes reduces the time and manual work, development costs, and team frustration - it is also about mindset.
+* Testing is hard and inconsistent, introducing a correct tool can help to produce more readable, expressive, effective, and well-documented tests.
+* *Approach*: Build spikes/prototypes and start using non-production code first (build, deploy, CI/CD, test) such as internal tools or skunk-work projects (hack days) that might or might not prove valuable in time (developer plugins, new products...).
+
+=== For you
+* *Reasons*: I want to have fun, I want to be a technology guru in my job, I want a new job, I don't want to be left behind...
+* It is important to focus on technologies that are more important to us than we need them, we don't have to learn everything right now just in case we need it.
+* *Approaches*: Blogs, tutorials & videos, online events & streams, user groups, online courses, books, pet projects, join an open-source project, find a project at work or get a new job.
+
+== Developers and business needs don't match
+The approaches for the business and the team overlap themselves but not for ourselves, because we want to learn a new technology personally and not build a new production service, so how do bridge the gap?
+
+* *"Create a culture of continuous learning in our environment"* to bridge the gap between the developers and the business needs.
+* Protected time for learning, brown bags/lunch & learn / book clubs, user groups, hack days, skunkworks, **20% time**, conferences.
+* The bottleneck is not what we type but learning, it is discovery, and figuring out what is going on, so it is needed to learn outside the scope of our particular codebase.
+
+== Rule 20% of time
+The rule says we should have dedicated 20% of our working time to self-education where developers don't do what business wants them to do, but there is a lot of value to it because developers will be doing something that might have value to the business later or might have a value to the team because we can work on things like continuous delivery or deployment pipeline.
+
+=== Risks
+Some organizations are not necessarily sold on investing this sort of time in these activities.
+
+* If they upskill the developers, the upskilled developers will up and leave.
+* A higher risk is not giving them training and space to grow and learn, they will leave anyway.
+
+=== Benefits
+* Doing these activities would more likely retain developers and the organization will have highly skilled ready to adopt the right tool at the right time.
+* Happy developers will more likely stay in the organization and contribute as fully as they can.

@@ -1,0 +1,73 @@
+= GraalVM: Java ♥ Python ♥ Micronaut
+
+:original: It's possible to render beautiful graphs with `pygal` in Java through GraalVM.
+:author: Štepán Šindelář
+:length: 44:33
+:date: 13-11-2023
+:language: Czech 🇨🇿
+:quote: It's possible to render beautiful graphs with `pygal` in Java through GraalVM.
+
+:rating: 5
+:pros: Though I am not interested in Python, the capabilities of GraalVM are fucking lit.
+:pros2: The live coding was done well.
+
+include::partial$session.adoc[]
+
+== GraalVM
+GraalVM is a universal virtual machine for running an application written in JavaScript, Python, Ruby, R, JVM-based languages (Java, Kotlin, Scala), and LLVM-based languages (C, C++).
+It is similar to JVM which supports native images, JIT mode, and non-JVM languages - a kind of universal swiss knife.
+The structure is very similar to the standard JVM, but has additional tools:
+
+* `./bin/gu` - `gu` is a tool for installing and managing optional GraalVM language runtimes and utilities, that can be listed with `./bin/gu list`, for example, `./bin/gu install python` installs the Python language runtime
+* `./bin/graalpy` starts the Python CLI
+
+== GraalPy
+GraalPy only supports currently Max/Linux, but is compatible with CPython. Unlike JPython supports native extensions, such as NumPy, Matplotlib, etc. The peak performance is on par with PyPy (currently the fastest alternative). It also supports Java interoperability and Python venv.
+It is possible to call Python code from Java as well as Python scripts, though GraalVM doesn't support multiple return types from Python to Java.
+The GraalVM can be included in the IDE as an SDK and the GraalVM-specific classes are already a part of the SDK, so the IDE should recognize them without importing a Maven dependency.
+
+== Example
+It is possible to call Python code from Java as well as Python scripts, though GraalVM doesn't support multiple return types from Python to Java.
+The GraalVM can be included in the IDE as an SDK and the GraalVM-specific classes are already a part of the SDK, so the IDE should recognize them without importing a Maven dependency.
+
+[,java]
+----
+Context ctx = org.graalvm.polygot.Context.newBuilder("python").build() // part of GraalVM
+Value value = ctx.eval("python", "1+1");
+Integer i = value.fitsInInt ? value.asInt() : null;
+----
+
+It's possible to get bindings from the snippet and execute them:
+
+[,java]
+----
+ctx.eval("python",
+"""
+def foo(a,b):
+    return a+b
+import polygot
+polygot.export_value("myid", foo)
+""");
+----
+
+[,java]
+----
+ctx.getPolygotBindings().getMember("myId").execute(2, 3);
+----
+
+[,java]
+----
+ctx.getBindings("python").getMember("foo").execute(2, 3);
+----
+
+If Python needs to access the Java arrays and classes, it's needed to allow the host access:
+
+[,java]
+----
+ctx.allowHostAccess();
+----
+
+== Sample usages
+
+* Simple and quick scripting where Python excels primarily (though alternatives are to write a Maven plugin or dependency), but this is useful for smaller companies.
+* To render beautiful graphs with `pygal` in Java through GraalVM.

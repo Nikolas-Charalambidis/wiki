@@ -1,0 +1,53 @@
+= Spring Data JDBC: Beyond the Obvious
+
+:link: https://springone.io/2021/sessions/spring-data-jdbc-beyond-the-obvious
+:author: Jens Schauder as Staff Engineer, VMware
+:length: 52:39
+:date: 09-09-2021
+:language: English 🇺🇸
+:track: Intermediate/Advanced Spring
+:quote: Strong Aggregates as the main concept of Spring Data JDBC: Whatever is reachable from the root of the aggregates is part of that aggregates and gets persisted/loaded with that root.
+
+:rating: 5
+:pros: Very informative session about not-too-known Spring Data JDBC, easy-to-understand examples
+
+include::partial$session.adoc[]
+
+Spring Data offers a common abstraction for various kinds of persistent stores.
+The abstraction means that things look similar, and it's by no means that it's possible to just swap a one database out and another one in; otherwise, the common set of features would be limited, and the underlying technology features are not blocked.
+Things look similar, so working with one gives an easy way in the other. Spring Data is famous for the ability to define repositories as interfaces conceptually from the domain-driven design.
+
+Spring Data JPA is far more popular than Spring Data JDBC, but it brings a problem that is very complex, ex. it tries to map a graph of objects/classes to a graph of tables with no boundaries (lazy vs. eager), and it is needed to know what is behind saving and what is saving and what is controlled with cascade annotations.
+
+Spring Data JDBC is yet another support for relational databases, such as Spring Data JPA but without JPA.
+The key to its simplicity is strong aggregates.
+Whatever is reachable from the root of the aggregates is part of that aggregates and gets persisted/loaded with that root, just as it is kind of prescribed by domain-driven design, the concept of aggregates comes from.
+
+== User-defined IDs
+
+If we call `CrudRepository#save` on the entity, it set its `@Id` to the particular value that is not present in the database, it fails since `UPDATE` is executed instead of `INSERT` (because `@Id` is filled) and results in 0 updated rows.
+
+Solution is autowiring and calling `JdbcAggregateTepmlate#insert` that is used under the hood. Another solution is defining a bean `BeforeSaveCalback<Minion>` that generates for example `UUID` ID for the entity if it has not set ID yet.
+
+== JSON / Custom conversion
+
+We can persist an entity with an object property having further properties as JSON.
+
+*To write:* Implement `Converter<MyEntityData, JdbcValue>`, annotate converter with `@WritingConverter`, and store as `JdbcValue.of(json, JDBCType.VARCHAR)`/
+*To read:* Implement `Converter<JdbcValue, MyEntityData>`, annotate converter with `@ReadingConverter`, and read from JSON
+
+It is needed to create a configuration class (annotated with `@Configuration`) extending from AbstractJdbcConfiguration` overriding and registering a bean of `JdbcCustomConversions`.
+
+== Bidirectional relationship
+
+In the relationship 1:N `Minon` has `Set<Toy>`, the full-args constructor is annotated with `@PersistenceConstructor` to mark it for Spring Data and set a reference for each `Toy#setMinion` to `this`, and that reference in `Toy` must be `@Transient`.
+
+Alternatively it is possible to use `AggregateReference<Minion, Long>` in `Toy` and use `@Query` in the `CrudRepository<Toy>` to get `Collection<Toy> by `Minion#getId()` from its `AggregateReference`.
+
+== Caching
+
+Just use Spring Data caching mechanism enabled by `@EnableCaching` and placed `@Cacheable` annotations.
+
+== Eager loading references
+
+To load data in a single statement it is possible to use a view such as `ToyView extends Toy` to simply include all `Toy` fields and embedded `Minion` field using `@Embedded(onEmpt = Embedded.OnEmpty.USE_EMPTY, prefix = "minion_")` annotation and fetch them in a repository using `@Query` with a `JOIN statement`.

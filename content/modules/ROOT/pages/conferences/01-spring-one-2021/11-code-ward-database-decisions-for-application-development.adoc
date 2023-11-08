@@ -1,0 +1,45 @@
+= Code Wars: Database Decisions for Application Development
+
+:link: https://springone.io/2021/sessions/database-decisions-for-application-development
+:author: Jennifer Reif as Developer Relations Engineer, Neo4j
+:length: 51:14
+:date: 09-09-2021
+:language: English 🇺🇸
+:track: Beginner-Friendly Spring
+
+:rating: 4
+:pros: Implementation of the same conceptual data representation in various database models, sorcery that programmed code on the fly worked always at the first try.
+:cons: Missing introduction of at least basic examples of use-cases for what each data model is suitable or not, more detailed comparison aside from implementation is missing.
+
+include::partial$session.adoc[]
+
+== Databases
+
+*In long-term* is the right tool for the right job worth for future maintenance/improvement efforts.
+
+*In the short-term* forces data into an unnatural format, confuses data model, and delegates business questions to complex queries, data storage can impact application development
+
+Spring Data provides annotation-based mapping for POJO domain classes, repository support via interfaces, and DSL queries for each datastore
+
+=== MariaDB
+
+MariaDB as an example of a relational database model through Spring Data JPA dependency.
+
+* `orders(orderId, orderDate)`, `products(productId, productName)` and `orderProducts(quantity, unitPrice)` tables representing an M:N relationship between `orders` and `products`.
+* The concepts are `@Entity`, `@Table`, `@Id`, `@Column`, `@OneToOne`/`@OneToMany`/`@ManyToOne`/`@ManyToMany`, `@JoinColumn` JPA (`javax.persistence`/`jakarta.persistence`) and Spring Data annotations and `CrudRepository<E, ID>` interface with `@Query` annotation using JQL/HQL as a domain-specific language for querying from the database.
+* Relevant properties are `spring.dtasource.**` and `spring.jpa.**`.
+
+=== MongoDB
+MongoDB as an example of a document database model through Spring Data MongoDB dependency
+
+* `order(_id, orderId, orderDate, Product(productId, productName, unitPrice, quantity))` nesting structure.
+* The concepts are `@Document`, `@Id ObjectId objectId`, `@Field` Spring Data MongoDB annotations, and `CrudRepository<E, ID>` interface with `@Query` annotation using Json Structured queries (SQL works also) as a domain-specific language for querying from the database.
+* Relevant properties are `spring.data.mongodb.**`.
+
+=== Neo4j
+
+Neo4j as an example of a graph database model through Spring Data Neo4j dependency
+
+* `order(orderId, orderDate)` and `product(productId, productName)` nodes with the association `INCLUDES` from left to right between them having `unitPrice` and `quantity` attributes.
+* The concepts are `@Node`, `@Id`, `@Relationship` and `@TargetNode` Spring Data Neo4j annotations and `CrudRepository<E, ID>` interface with `@Query` annotation using Cypher as a domain-specific language for querying from the database.
+* Relevant properties are `spring.data.neo4j.**` and `spring.neo4j.**`.

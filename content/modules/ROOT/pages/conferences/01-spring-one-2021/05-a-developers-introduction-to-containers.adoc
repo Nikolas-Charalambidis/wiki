@@ -1,0 +1,31 @@
+= A Developer’s Introduction to Containers
+
+:link: https://springone.io/2021/sessions/a-developers-introduction-to-containers
+:author: Nigel Brown as Senior Open Source Community Manager, VMware
+:length: 26:15
+:date: 08-09-2021
+:language: English 🇺🇸
+:track: Cloud Native Platforms
+:quote: Container is process isolation.
+
+:rating: 5
+:pros: Excellent explanation of the container and Linux kernel concepts, simple but nice workshop
+:cons: Slides would be better to support the ideas at the beginning
+
+include::partial$session.adoc[]
+
+Container is a process or group of processes running in isolation; it is great for portability and security.
+The way of achieving the process isolation is by leveraging several features of the Linux kernel:
+
+== Namespaces
+link:https://en.wikipedia.org/wiki/Linux_namespaces[Namespaces] wrap global system resources in an abstraction that makes it appear to the process within the namespace that they have their instance of the resource.
+
+Process *one* and *zero* are typically reserved for what it takes to initialize our OS.
+In a container, typically, the application is running an application with process id *one*.
+That's a whole instance of the process id counter that's working inside the container that is different from what's happening outside, and that's achieved by having a separate namespace from within which to work.
+
+== cgroups
+
+link:https://en.wikipedia.org/wiki/Cgroups[cgroups] are control groups allowing processes to be organized into hierarchical groups whose usage of various types of resources can be then limited and monitored.
+
+Basically, it allows assigning a maximum number of resources each group can allocate to ensure your critical system processes always have the resources they need to run.

@@ -1,0 +1,50 @@
+= How to Start Your Application Modernization Journey
+
+:link: https://springone.io/2021/sessions/how-to-start-your-application-modernization
+:author: Steve Hawkins as Sr. Manager Converged Infrastructure, BT
+:length: 25:43
+:date: 2021-09-19
+:language: English 🇺🇸
+:track: Agile Leadership
+:quote: Don't be afraid to try different approaches to refactoring to determine what works.
+:quote2: Functional alignment of the squads for refactoring brings stronger outcome benefits.
+
+:rating: 2
+:pros: A complex session covering the code part of modernizing and also the people, processes, and kind of more a holistic approach, the speaker is a true professional in what he does, watching for the second time makes everything more sense, extracted two on-spot quotes defining this talk.
+:cons: Overly academical resulting in a hard focus, no definition of modernization.
+:cons2: Unfriendly slideshow throwing tons of small text with each slide.
+:cons3: Extremely abstract terms (examples needed) and vague shortcuts (EA, BAU, CoE, SA).
+
+include::partial$session.adoc[]
+
+Note: BT is a company name.
+
+== Transformation goals
+The transformation to remain relevant and competitive is modernizing the organization and architecture.
+
+* Accelerate transition and adoption of modern methods to become more responsive to customer needs as well as remove complexity and legacy to reduce time to market.
+* The organization is changing to a flatter, more accountable structure and is pivoting to tribes/squad structures to enhance decision powers.
+* Drive towards major Public Cloud adoption (SaaS), however, there was a bit of hesitancy and uncertainty from a security perspective.
+* In practical terms: Simplify the architecture (customer sources, system interactions), modernize the application estate, establish a new operating model, introduce agile working practices and remove legacy.
+
+== Problem statement
+Months of analysis to clearly understand the impacts on the IT estate, ability to realize cost savings for well-defined and realizable plans, and modernization needed traction.
+
+== Tribe overview
+
+* **Opportunities:** Establish management.
+* **Cost and Plans:** Overall plans, decommissioning, timing.
+* **Knowledge Repository:** Aggregate application knowledge, automation for data sources, reporting.
+* **Refactoring Outcomes:** Disaggregation to microservices, decommissioning outcomes, single prioritized backlog, community.
+* **Decommissioning Outcomes:** Delivery of outcomes, KPI with a single backlog.
+
+== Flow of the work
+
+Taking application in the Opportunities squad, looking at it from the EA roadmaps for categorization trying to analyze the estate to establish the right group of applications, and gradually filtering it out so at the end of the pipeline we end up with a refactoring candidate or potentially decommissioning candidate.
+
+* Decision trees and multiple views of a point such as costs or people effort associated with these applications, time to refactor, complexity, value delivered, and to deliver.
+* Refactoring technology approach takes a functionally discrete slice (from a set of functionalities, so it can be easily refactored) and rebuilds as a microservice delivering a decoupled and resilient service.
+
+== Scaling the work
+
+Establish multiple squads on a per-application basis and leverage best practices, patterns, and methods.

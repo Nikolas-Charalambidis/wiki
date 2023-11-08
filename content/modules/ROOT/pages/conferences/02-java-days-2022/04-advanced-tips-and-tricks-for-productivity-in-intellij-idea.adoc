@@ -1,0 +1,66 @@
+= Advanced tips and tricks for productivity in IntelliJ Idea
+
+:original: Produktivita práce v IntelliJ Idea - pokročilé tipy
+:author: Pavel Jetenský
+:length: 46:57
+:date: 12-11-2023
+:language: Czech 🇨🇿
+:quote: Quote.
+
+:rating: 4
+:pros: Perfect tips I didn't know about and I will surely use: Especially from the navigation section, and String manipulation. Suggested very plugins.
+:cons: I expected more of the debugging tricks.
+:cons2: RIP for the Mac users  as only Windows shortcuts were presented (though the speaker is a Windows user, he could include them.
+
+include::partial$session.adoc[]
+
+== Navigation
+
+* Type hierarchy (**⌃H**).
+* Last edit location (**⌘⇧⌫**).
+* Backward-forward location history (**⌥⌘←** / **⌥⌘→**).
+* Quick documentation view (**⌥␣**)(works also for XML, Dockerfile, in Windows **ctrl**+**Q**).
+* Find a test class or method for implementation (**⌘⇧T**).
+* Other: File structure, Declaration, and usages...
+
+== Opening and Reading
+
+* Multicolumn edit (Mouse Middle button, or **⌥⌘⇧** and left click and drag).
+* Multiple carets (**⌥⇧** and click)
+* Quick open understands wildcard (**⇧⇧** and type `*Controller`).
+* Other: Mnemonic bookmarks, Find in the previous search (for example `pet` AND `@Entity`).
+
+== Debugging
+
+* Node.js debugging (**⌃⇧** click to the `localhost` address once the application starts).
+* Debug evaluation in a full-text mode can define new variables and return them to the console (a log trick can be used with a raw `List`):
++
+[,java]
+----
+int a = 5;
+int b = a + 5;
+a
+----
+This prints out the value of `a` only.
+* Other: Remote debug (`ssh -f nikolas@email.com -L 5005:127.0.0.1:5005 -N`).
+
+== Code Writing
+
+* Live templates are context-aware (`sout`, `iter`, `psvm`, `for`, `lazy`).
+* Surround with code (`if-else`, `try-catch`, etc.)(**⌘⌥T**).
+* Show context actions (**⌥↵**).
+* Delete line (**⌘X**).
+* Duplicate line (**⌘D**).
+* Move lines up or down (**⌥⇧↑** / **⌥⇧↓**).
+* Move blocks up or down (**⌘⇧↑** / **⌘⇧↓**).
+
+== Plugins
+* Presentation assistant plugin to show the shortcuts written
+* A key promoter to suggest shortcuts for repetitive actions
+* String manipulation (hash, base64, case conversion)
+
+== Miscellaneous
+* Code → Analyze Stack Trace
+* View → Appearance → Enter presentation mode
+
+include::partial$session-impression.adoc[]

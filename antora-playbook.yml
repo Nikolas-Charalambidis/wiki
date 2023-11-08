@@ -20,7 +20,11 @@ antora:
 ui:
   bundle:
     url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/master/raw/build/ui-bundle.zip?job=bundle-stable
+    #url: https://github.com/camptocamp/devops-stack-antora-ui/releases/download/main-latest/ui-bundle.zip
+    #url: https://github.com/bonitasoft/bonita-documentation-theme/releases/download/v1.15.0/bonita-documentation-theme-v1.15.0.zip
 
 asciidoc:
   attributes:
     source-highlighter: 'coderay'
+  extensions:
+    - asciidoctor-kroki

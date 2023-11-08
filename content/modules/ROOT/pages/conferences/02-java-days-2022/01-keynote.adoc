@@ -1,0 +1,60 @@
+= Keynote
+
+:original: Keynote
+:author: Jiří Pinkas
+:length: 46:44
+:date: 12-11-2021
+:language: Czech 🇨🇿
+:quote: The Oracle Java is again available free of charge for production as of Java 17.
+
+:rating: 2
+:pros: A nice and brief overview of the new and incoming technologies and upgrades as well as an overview of the usage statistics from various sources.
+:cons: Though it is nice to know which JRE/JDK distribution the speaker prefers, no technical reasoning was provided instead.
+:cons2: So much hate towards MySQL but no explanation.
+:cons3: It's nice to know what offers a "killer feature", but what exactly it is? Next time less of hype, swag, and buzzwords, but more explanation.
+
+include::partial$session.adoc[]
+
+== Usage statistics
+
+* **Java version:** Java 8 (37%), Java 11 (29%), Java 12 and newer (12%), Kotlin (8%), Groovy (6%), Java 7 and older (5%), Scala (3%)
+* **JRE/JDK distribution:** Oracle Java (36%), Generic OpenJDK (27%), AdoptOpenJdk (16%), Amazon COrretto (7%), Azul Zulu (6%), GraalVM (3%), Other (3%), OpenLogic JDK (2.3%)
+** The best distributions: Adoptium (Temurin) which is TCK certified and GraalVM for native applications.
+** The Generic OpenJDK has half-year validity only
+** Oracle Java is again available free of charge for production under the new "Oracle No-Fee Terms and Conditions" (NFTC) license that reverses a 2018 decision. This applies to the recently released version 17 of Oracle JDK and future versions.
+* **Microservices:** Currently transitioning to microservices (44%), We are talking about it (10%), Tried, didn't work (2%)
+* **Framework:**
+** Spring Boot (74%), Other (18%), Quarkus (5%), Vert.x (2%), DropWizard (1%)
+** Spring-based: Spring Boot (90.6%), Spring MVC (51.8%), Java EE 29.4%, Quarkus (10.6%), Vaadin (9.4%), Jakarta EE (5.9%), JSF (5.9%), Struts (5.9%)
+* **Virtual machine platform:** Docker (41%), Kubernetes (26%), VMware (16%), N/A (10%), Other (4%), Vagrant (3%)
+* **PaaS provider:** ASW (31%), Undisclosed (24%), Azure (14%), Google Cloud Platform (11%), Other (8%), Oracle Cloud Platform (3%), IBS (3%), SAP (2%), Pivotal (2%), VMWare Tanzu (2%)
+* **Application server:** Tomcat (48%), JBoss (15%), Jetty (13%), Other (8%), WebLogic (7%), WebSphere (5%), GlassFish (4%)
+* **Build tool:** Maven (68%), Gradle (23%), Ant (6%), Other (3)
+** Though Gradle usage is raising, it needs to be used correctly and carefully, or it gets messy and complicated.
+** Spring Starter by default switched to Gradle from Maven
+* **IDE:** IntelliJ Idea (48%), Eclipse (24%), VSCode (18%), Netbeans (6%), Other (4%)
+* **CI/CD:** Jenkins (43%), GitHub Actions (16%), Other (13%), Bamboo (7%), TeamCity (4%), Circle CI (3%), Travis CI (10%), None (10%)
+* **How many times do you commit code to CI/CD build per day:** 1 time (22%), 2 times (16%), 3 times (18%), 4 times (9%), 5 and more times (35%)
+* **Percent of GC algorithms:**
+** Java 10 and older: SerialGC (22%), ParallelGC (19%), G1 (22%), CMC (21%)
+** Java 11 and newer: G1 (68%), SerialGC (33%), CMC (4%), ParallelGC (1%)
+* **Database:** PostgreSQL (34.4%), MySQL (26.9%), Elasticsearch (18.3%), Oracle (18.3%), MSSQL (14%), IBM DB2 (12.9%), MariaDB (12.9%), MongoDB (7.5%), None (6.5%), DynamoDB (4.3%), Other (4.3%), SQLLite (2.2%), Couchbase (1.1%), Firebase (1.1%)
+
+== Spring Boot 3
+
+* Spring Boot 3 runs on Java 17 (which is the minimum version required) and supports records.
+* New Micrometer for metrics and tracing, Spring Cloud Sleuth project becomes obsolete.
+* Java EE is no longer used in favor of Jakarta EE, which means no longer `javax` packages but the `jakarta` ones.
+* Spring Security 6 has a major change where `SecurityChainFilter` has to be used instead of `WebSecurityConfigurerAdapter`.
+* Spring Data JPA and Hibernate 6
+* AOT GraalVM support for native images making Spring Native obsolete as it was an experimental project, not it is supported out-of-the-box.
+
+== Java 18
+* Multiline String.
+* Switch Expressions.
+* Records.
+* Pattern Matching for `instanceof`.
+* Better NPE error messages.
+* Faster start-up and lower memory footprint.
+
+include::partial$session-impression.adoc[]

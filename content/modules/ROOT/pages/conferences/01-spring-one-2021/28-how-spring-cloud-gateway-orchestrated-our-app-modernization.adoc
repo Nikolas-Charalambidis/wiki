@@ -1,0 +1,83 @@
+= How Spring Cloud Gateway Orchestrated Our App Modernization
+
+:link: https://springone.io/2021/sessions/how-spring-cloud-gateway-orchestrated-our-app-modernization
+:author: Dodd Pfeffer as Advisory Solution Engineer, VMware
+:author2: Partha Chandramohan as Solutions Architect, AARP
+:length: 25:16
+:date: 2021-09-28
+:language: English 🇺🇸
+:track: Architecture
+
+:rating: 3
+:pros: Great session about how Spring Cloud Gateway becomes handy for application modernization as a simple solution able to fulfill a lot of solution requirements. Interesting architecture lesson.
+:cons: Fewer abbreviations (who knows SCG stands for Spring Cloud Gateway).
+:cons2: Confusing speakers switching.
+:cons3: The cons of Spring Cloud Gateway were not mentioned.
+
+include::partial$session.adoc[]
+
+== Legacy application
+The decade-old application about to be modernized:
+
+* AARP is a nonprofit organization empowering people to *choose how they live*, advocating healthcare, social security, and health insurance, and serves more than 40 million members today.
+* DSM manages the Digital and Membership strategies for AARP including the technology and production of content on [aarp.org](aarp.org) and the AARP Now application, and strategies that help them to *acquire*, *maintain* and *bring value to members*.
+
+=== Legacy setup
+The legacy application consists of over 30 applications and monoliths:
+
+[plantuml,ab-partial-all-1,svg]
+----
+left to right direction
+'top to bottom direction
+node webserver as "Webserver"
+node elb1 as "ELB (Elastic Load Balancer)"
+node elb2 as "ELB (Elastic Load Balancer)"
+node elb3 as "ELB (Elastic Load Balancer)"
+collections ec2a as "EC2 Tomcat Application 1 (multiple instances)"
+collections ec2b as "EC2 Tomcat Application 2 (multiple instances)"
+collections ec2c as "EC2 Tomcat Application 3 (multiple instances)"
+webserver --> elb1
+webserver --> elb2
+webserver --> elb3
+elb1 --> ec2a
+elb2 --> ec2b
+elb3 --> ec2c
+----
+
+* No meaningful auto-scaling (it was based on CPU/Memory but not actual incoming traffic).
+* No gateway.
+* No throttling.
+* No rule-based routing.
+
+=== Needed solution
+Migrate to modernized application *gradually without impacting* the functionality, and application metrics and with a *quick rollback strategy* to the original state, *Throttle the traffic* into the new applications incrementally and route traffic to legacy and new service *at the same time*.
+
+== Modernization strategy
+Break down monolithic apps (key piece), gradually peel off one service at a time, and route traffic to legacy and new services, SCG was the solution for routing, A/B testing, traffic splitting, ruling by header values.
+
+=== Blue-Green deployment
+* Outlined requirement as part of application modernization: Spring Cloud Gateway became the fundamental enabler to achieve it using header values.
+* Spring Cloud Gateway enabled quick switching and roll-back between a new service and legacy solution (50:50) for A/B testing and load measurements of the infrastructure.
+
+=== The setup
+[plantuml,ab-partial-all-1,svg]
+----
+left to right direction
+'top to bottom direction
+node webproxy as "Webproxy"
+node scg as "SCG"
+node webserver as "Webserver"
+node tanzu as "Tanzu Platform"
+node legacy as "Legacy platform"
+webproxy --> scg
+scg --> webserver
+webserver --> tanzu : "routing to"
+webserver --> legacy : "routing to"
+----
+
+=== Pros of Spring Cloud Gateway
+* Developer-friendly works seamlessly with the platform.
+* Keeps things simple
+* Easy integration.
+* Comprehensive configuration list.
+* Avoids the need for other expensive products.

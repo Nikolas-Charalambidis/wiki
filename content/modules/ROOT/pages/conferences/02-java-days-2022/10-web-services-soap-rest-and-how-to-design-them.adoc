@@ -1,0 +1,116 @@
+= Web Services, SOAP, REST, and how to design them
+
+:original: Web Services, SOAP, REST aneb jak je správně navrhovat
+:author: Petr Adámek
+:length: 52:14
+:date: 13-11-2023
+:language: Czech 🇨🇿
+:quote: Insurance companies have contracts older than 30 years that need to be supported, though the products are no longer offered. For that reason, they use old systems.
+
+:rating: 5
+:pros: A great speech proving SOAP is not dead (ex. insurance industry), though shall rather not be used for greenfield projects.
+:pros2: Well-explained comparison focusing on when SOAP or REST shall be used and how.
+
+include::partial$session.adoc[]
+
+The author has experience with rather older projects as he works as a consultant for corporates.
+Law of the instrument (law of the hammer, Maslow's hammer): Is a cognitive bias that involves an over-reliance on a familiar tool: "I hold a hammer, everything becomes a nail".
+There is not a universal solution and tools, there exist limits and exceptions, and quite often.
+
+== SOAP vs. REST
+
+[cols="1s,2,2"]
+|===
+|#
+|SOAP
+|REST
+
+|Characteristics
+|Heavyweight
+|Lightweight
+
+|Origin
+|Specification and abstraction attempt
+|Organic
+
+|Protocol
+|Any (including HTTP)
+|HTTP only
+
+|Definition
+|WSDL (advantage in the beginning)
+|Swagger (disadvantage as it came later)
+
+|Content format
+|XML only
+|Any (usually JSON, sometimes XML)
+
+|Content schema
+|XML schema
+|Depends on the content format (ex. JSON schema)
+
+|Class generation
+|`wsimport`
+|`swagger-codegen`
+
+|Operations
+|Any
+|`GET`, `POST`, `PUT`, `PATCH`, `DELETE`
+|===
+
+== XML vs. JSON
+
+[cols="1s,1,1"]
+|===
+|#
+|XML
+|JSON
+
+| Formal standard
+| XML 1.0 (1998), XML 2.0 (2006)
+| RFC 5627 (2006), RFC 8259 (2017), ECMA-404 (2017)
+
+| Semistructured data
+| Yes
+| No
+
+| Comments
+| Yes
+| No
+
+| Process instructions
+| Yes
+| No
+
+| Namespaces
+| Yes
+| No
+
+| Schema
+| XML schema, RelaxNG, Schematron
+| JSON Schema
+
+| Transformations
+| XSLT (any version), XQuery
+| XSLT 3.0, jolt, jslt, JSONata
+|===
+
+== When to use SOAP
+
+* Due to historical reasons. The other party requires it.
+* Insurance companies have contracts older than 30 years that need to be supported, though the products are no longer offered. For that reason, they use old systems. It makes no sense for such companies to rewrite the existing solutions that become deprecated with time. Also, XML structures tend to be rich and complex in definition and XML allows nesting.
+* It's needed to build something on top of the existing SOAP solution. It's needed to route through multiple nodes (SOAP is protocol-independent).
+* It's needed to use XML, WSDL, or SOAP extensions (WS-security, WS-MeliableMessaging, WS-Addressing) or use it as a universal format.
+* Reasons XML is required: There is an existing schema to be used. Produce SOAP as a REST service. Schemes need to be combined. There is a need for semistructured data. There is a need for XSLT transformations.
+
+== Best practices
+
+* Contract first as it's possible to develop in parallel unless a small BE-FE application with few endpoints is developed.
+* Well-defined contract including non-standard situations and error codes. An empirical approach to how the service works is not a good idea.
+* Use standard and appropriate error codes for a particular situation (4XX and 5XX for the beginning).
+* Think out-of-the-box and don't let the Law of the instrument influent you, for example, there are other solutions aside from REST and SOAP:
+* GraphQL
+* Messaging (JMS, Kafka, RabbitMQ, etc.)
+* Client identification and correlation ID
+* REST API versioning with backward compatibility: The approach with headers is not usually recommended and it's better to include the version to the path which is handy for future version decommissioning.
+* REST API filter: If there is required a sophisticated filter for nested projection, better grab GraphQL.
