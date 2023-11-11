@@ -1,3 +1,5 @@
 = Wiki
 
 The contents of this Wiki serve mainly for me to navigate quickly through my strictly personal notes, documentation, and ideas.
+
+You can always navigate back to my link:https://www.nikolas-charalambidis.com/[website].
