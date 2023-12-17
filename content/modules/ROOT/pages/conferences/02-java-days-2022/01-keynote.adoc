@@ -7,7 +7,7 @@
 :language: Czech 🇨🇿
 :quote: The Oracle Java is again available free of charge for production as of Java 17.
 
-:rating: 2
+:rating: 3
 :pros: A nice and brief overview of the new and incoming technologies and upgrades as well as an overview of the usage statistics from various sources.
 :cons: Though it is nice to know which JRE/JDK distribution the speaker prefers, no technical reasoning was provided instead.
 :cons2: So much hate towards MySQL but no explanation.
@@ -56,5 +56,3 @@ include::partial$session.adoc[]
 * Pattern Matching for `instanceof`.
 * Better NPE error messages.
 * Faster start-up and lower memory footprint.
-
-include::partial$session-impression.adoc[]

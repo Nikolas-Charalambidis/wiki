@@ -138,5 +138,3 @@ JLink is *not* a good alternative because it conflicts with the layered JARs con
 * Distroless images
 
 Distroless images are without Linux distribution and contain only the application, though there is no `bash` to use in the container, it is smaller and safe from attacks.
-
-include::partial$session-impression.adoc[]

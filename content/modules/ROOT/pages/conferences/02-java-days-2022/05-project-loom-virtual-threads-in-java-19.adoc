@@ -145,5 +145,3 @@ The virtual threads should not be pooled as long as they are lightweight and the
 However, there is a new dedicated thread pool `ExecutorService`, though it's better to just create a thread and let the system handle it.
 
 IMPORTANT: Do not use priorities with virtual threads.
-
-include::partial$session-impression.adoc[]

@@ -1,0 +1,49 @@
+= Java Days 2023
+
+[%header,cols="1s,2,2"]
+|===
+|#
+|#
+|Remark
+
+|Link
+|link:[https://www.javadays.cz/en/]
+|Website updates yearly
+
+|Location
+|Czech Republic, Prague 🇨🇿
+
+CineStar Černý Most
+|
+
+|Date
+|November 2023
+|
+
+|Languages
+|Mostly in Czech 🇨🇿
+Some in Slovak 🇸🇰 and English 🇺🇸
+|
+
+|Fee
+|Yes
+|Online cca $200 excl. VAT
+
+Onsite ??? excl. VAT
+
+|Records availability
+|Limited for 1-2 weeks after the event
+|Only for the registered users
+|===
+
+* xref:conferences/03-java-days-2023/01-keynote.adoc[]
+* xref:conferences/03-java-days-2023/02-upgrade-to-spring-boot-3.adoc[]
+* xref:conferences/03-java-days-2023/03-error-states-handling-aka-did-you-try-to-turn-it-off-and-on.adoc[]
+* xref:conferences/03-java-days-2023/04-touch-the-ai.adoc[]
+* xref:conferences/03-java-days-2023/05-is-the-access-to-your-api-under-control.adoc[]
+* xref:conferences/03-java-days-2023/06-evitadb-quick-database-for-e-commerce.adoc[]
+* xref:conferences/03-java-days-2023/09-microservices-event-driven-architecture-in-tech-company-partner-session-kb.adoc[]
+* xref:conferences/03-java-days-2023/10-devops-is-fun-from-local-to-cloud-in-one-hour.adoc[]
+* xref:conferences/03-java-days-2023/13-printing-in-java.adoc[]
+* xref:conferences/03-java-days-2023/14-solving-memory-problems-in-java.adoc[]
+* xref:conferences/03-java-days-2023/15-your-agile-local-environment-with-testcontainers.adoc[]

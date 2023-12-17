@@ -1,0 +1,298 @@
+= Devops is fun: from local to cloud in one hour!
+
+:original: DevOps je zábava: z lokálu do cloudu za hodinu!
+:author: Martin Dulák
+:length: 55:44
+:date: 15-11-2023
+:language: Slovak 🇸🇰
+:quote:
+
+:rating: 4
+:pros: Practical session mentioning Jib, Kubernetes, Terraform and Pulmi as there are not too many such sessions.
+:pros2: Meme guy.
+:cons: While Pulmi seems to solve out a lot of problems, the presented TypeScript in the Java talk was a faux pas as the most known language among the attendees (Java) should be used as the demonstrative one.
+:cons2: Pulmi rather scared me due to non-intuitivity of the code, or the explanation was not clear.
+
+include::partial$session.adoc[]
+
+== DevOps
+
+Traditional view:
+
+* Devs are responsible for developing new features.
+* Ops making apps fast and reliable.
+
+Common problems:
+
+* Ops don't understand the app (how could they?).
+* Devs don't have necessary tools to troubleshoot apps.
+* Inefficient and uncooperative communication (the issue is ping-ponged back and forth).
+
+Why do we (Devs&Ops) develop apps?
+
+* To support business -> business wants changes -> changes make apps unstable -> solution? *Tools* and *culture* to support the common goal.
+
+DevOps:
+
+* Faster development lifecycle and troubleshooting and more engaged teams: Not just coding Java classes but making them configurable as he will configure it, prepare it for future
+* More table apps
+* Higher level of automation
+
+== DevOps in practice
+
+Spring has a CLI to generate a project from the Spring Initializr into the IDE: `spring init -l kotlin -d web -x`
+
+The build has to be standardized as our local environment has different environment variables and settings affecting the build and runtime.
+
+== CI
+
+Define a pipeline that builds the application in a Docker image:
+.`.gitlab-ci.yml`
+[,yml]
+----
+stages:
+  - build
+build:
+  image: amazoncorretto:20-alpine
+  stage: build
+  before_script:
+    - chmod +x ./gradlew
+  script:
+    - ./gradle build --no-daemon
+----
+
+Best practices:
+- Gradle: cache `.gradle`
+- Kotlin: use `detekt` for static analysis and `klint` for linting:
+[,kt]
+----
+plugins {
+    id("io.gitlab.arturbosch.detekt") version "1.21.0"
+}
+
+dependencies {
+    detectPlugins("io.gitlab.arturbosch.detekt:detekt-formatter")
+}
+----
+
+== Docker
+
+.`Dockerfile`
+[,bash]
+----
+FROM amazoncorretto:20-alpine
+COPY build/libs/*.jar app.jar
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+----
+
+and add the Docker image build to the build pipeline:
+
+.`.gitlab-ci.yml`
+[,yml]
+----
+stages:
+  ...
+build:
+  ...
+  artifacts:
+    paths:
+      - build/libs/*.jar
+build-docker-image:
+  image: docker:cli
+  needs:
+    - job: build
+  stage: build
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: /certs
+    DOCKER_TLS_VERIFY: 1
+    DOCKER_CERT_PATH: $DOCKER_TLS_CERTDIR/client
+  before_script:
+    - mkdir -p #HOME/.docker/
+    - echo "$DOCKER_AUTH_CONFIG" > $HOME/.docker/config.json
+  script:
+    - docker build -t demo:${CI_COMMIT_SHORT_SHA}
+    - docker push demo:${CI_COMMIT_SHORT_SHA}
+----
+Jobs are isolated so `build` and `build-docker-iamge` don't share the artifacts together by default, so `artifacts` and `needs` is used.
+
+Best practices:
+
+* Use Jib for daemonless and fast builds that uses layers efficiently
+* Don't use `root` user
+* Scan for vulnerabilities
+
+== Cloud infrastructure
+
+Cloud is not needed or suitable for every application, though is quick to enroll.
+
+What we want:
+
+* My colleague needs to enroll a new environment as I did before, so we need a mechanism to record changes
+* The loud set-up and infrastructure needs to be versioned.
+* We want to share the configuration and discuss over it on pull requests
+* So we want IAAS (infrastructure as a code), for example Terraform or Pulumi
+
+=== Pulumi
+
+The infrastructure can be in the same repository, let's say `infrastructure` directory.
+
+Initialization:
+
+* `pulumi new typescript` (the language of configuration)
+* It generates `Pulumi.yaml` and typescript boilerplate such as `index.ts`, `package.json` and `tsconfig.json`.
+
+.`package.json`
+[,json]
+----
+    ...
+    "dependencies": {
+        "@pulumi/pulumi": "^3.0.0",
+        "@pulumi/gcp": "^6.66.0"
+    }
+----
+
+.`index.ts`
+[,ts]
+----
+import * as pulumi from "@pulumi/pulumi"
+import * as gcp from "@pulumi/gcp"
+
+// Project definition
+const myProject = new gcp.organizations.Project("myProject", {
+    orgId: "12345678901",
+    projectId: "java-days-2023",
+    billingAccoung: "ABC12-DEF34-GHI56"
+});
+
+// Activate the cloud service
+const cloudRunService = new gcp.projects.Service("cloud-run", {
+    project: myProject.projectId,
+    service "run.googleapis.com"
+});
+
+// Use the service
+const service = new gcp.cloudrunv2.Service("backend", {
+    project: myProject.projectId,
+    location: "europe-west3",
+    template: {
+        containers: [
+            {
+                image: pulumi.interpolate`demo:${new pulumi.Config().require("version)}
+            }
+        ]
+    }
+}, { dependsOn: cloudRunService }); // pulumi by default initializes by parallel (sometimes guesses), so it is needed to define dependencies
+
+// Make the application available through authorization
+new gcp.cloudrun.IamBinding("my-iam-binding", {
+    project: myProject.projectId,
+    location: "europe-west3",
+    service: service.name,
+    role: "roles/run.invoker",
+    members: ["allUsers"] // allows all users to access the service
+});
+
+export const backendUrl = service.uri;
+----
+
+Resources (ex. database in cloud) are distributed by providers (AWS solution, Docker).
+
+
+Apply `pulumi up` or `pulumi up -c version=19cb95fa` for a build of a certain version to be used by the script (`${new pulumi.Config().require("version)}`).
+
+Check the output with `pulumi stack output`.
+
+Terraform vs. Pulumi:
+
+* HCL vs TypeScript, Go, .NET, Python, Java (one can use the language which is comfortable with, it also enables ID support, ESLint, Prettier, etc.)
+* Declarative vs Imperative: Terraform struggles to define a resource conditionally as there is no simple way to declare `if`, so hacks with count and non/empty arrays are needed:
+.`index.ts`
+[,tf]
+----
+resource "azuread_group" "default" {
+  count = var.setup_group == true ? 1 : 0
+  dynamic "owners" {
+    for_each = var.setup_owners ? [1] : [0]
+    content {
+      concat(var.terraform_users, [azuread_service_principal.default[0].id])
+    }
+  }
+}
+
+output "ad_group_id" {
+  value = join("", azuread_group.default.*.object_id)
+}
+----
+
+== CD
+
+We need a service account so GitLab can deploy to cloud.
+
+Introduce the CI/CD environment variables in GitHub: `DOCKER_AUTH_CONFIG`, `GOOGLE_CREDENTIALS` and `PULUMI_ACCESS_TOKEN`.
+Extend the GitLab pipeline and infrastructure:
+
+.`.gitlab-ci.yml`
+[,yml]
+----
+stages:
+  - build
+  - deploy
+build:
+  ...
+build-docker-image:
+  ...
+deploy
+  stage: deploy
+  image: pulumi/pulumi-nodejs:3.8.0
+  needs:
+    - job: builder-docker-image
+  before_script:
+    - cd infrastructure
+    - npm i
+  script:
+    - pulumi up -s dev -y --skip-preview --config version=${CI_COMMIT_SHORT_SHA}
+----
+
+.`index.ts`
+[,ts]
+----
+const sa = new gcp.serviceaccount.Account("gitlab", {
+    project: myProject.projectId,
+    accountId: "gitlab"
+});
+
+new gcp.projects.IAMBinding("gitlab", {
+    project: myProject.projectId,
+    role: "roles/owner",
+    members: [pulumi.interpolate`serviceAccount:${sa.email}`]
+});
+
+const saKey = new gcp.serviceaccount.Key("gitlab-key", {
+    serviceAccountId; sa.name
+});
+
+export const serviceAccountKey = saKey.privateKey;
+----
+
+Check the output including secrets with `pulumi stack output serviceAccountKey --show-secrets | base64 -d`.
+
+== DevOps in practice
+When using serverless technologies:
+
+* Go native (longer build, no reflection)
+* Try CRaC or OpenLiberty for CRIU (Checkpoint/restore in userspace)
+* Optimize JVM for it (e.g. setting `-XX:MaxRAMPercentage=75) as we want to use as much as resources since we pay for it (by default it is 25%)
+
+Pulumi:
+
+* You don't want to mix deployment and infrastructure.
+* Work with Kubernetes:
+** Pulumi can both create and deploy to Kubernetes cluster, which Terraform cannot do.
+** No more patches and `sed` in Kustomize.
+* Pulumi is "backwards-compatible" and "Terraform-friendly":
+** Pulumi-Terraform Bridge and Native providers.
+** You can convert Terraform and Kubernetes code to Pulumi, so Pulumi can coexist together with Terraform.

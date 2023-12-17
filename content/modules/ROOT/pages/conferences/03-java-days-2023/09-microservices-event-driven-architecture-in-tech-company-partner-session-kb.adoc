@@ -1,0 +1,459 @@
+= Microservices + Event Driven Architecture in tech. company | Sponsored talk from KB
+
+:original: Microservices + Event Driven Architecture v tech. firmě │ Partnerská přednáška KB
+:author: Jiří Pinkas
+:length: 55:57
+:date: 14-11-2023
+:language: Czech 🇨🇿
+:quote: "The company must be mature enough "to enjoy" the microservices."
+:quote2: "We are blind and deaf without monitoring and alerting."
+
+:rating: 4
+:pros: Nicely managed talk, the speaker can naturally talk in the informative form.
+:cons: Overly confident guy telling presenting a golden standard that everyone must follow.
+:cons2: I cannot agree with the statement that "Microservices and event-driven architecture should be everywhere".
+:cons3: The latter part of the session was rather focused on generic description of patterns instead of talking about the way KB was designed.
+
+include::partial$session.adoc[]
+
+== New Digital Bank
+
+Greenfield digital bank from scratch.
+1000 developers and 200 teams.
+
+Technological stack:
+
+* Spring Boot 2 (migrating to Spring Boot 3)
+* Java 17 / Kotlin
+* Event-driven architecture based on Apache Kafka (along with JMS in some parts).
+* OpenAPI defines contracts of REST communication between client and server.
+* Git-ops approach, Kubernetes, Helm
+* CI/CD via Jenkins pipelines
+* Centralized logging, monitoring and tracing
+
+== Microservices prerequisites
+The company must be mature enough "to enjoy" the microservices.
+
+* CI/CD pipeline
+* Containerization (ideally with Kubernetes)
+* Observability (central logging, monitoring, tracing)
+* Robust testing strategy
+* Fault-tolerant architecture
+* Mass automation
+
+link:https://argoproj.github.io/cd/[Argo CD] and GitOps is a standard that can be fully automated: Code is pushed to GIT, CI/CD pipeline takes the repository, builds an image and pushes to the Docker repository. Argo synchronizes configuration into Kubernetes that pulls the Docker images and runs in orchestrated containers.
+
+=== CI/CD
+
+Basic process: Checkout -> Build application -> Run tests -> Run Sonar (quality gate checks: code coverage, security rating) -> Run OWASP dependency check -> Push to Docker registry
+
+The CI/CD should focus on code quality and vulnerabilities as they can be everywhere (code, dependencies...) which is nowadays a huge threat:
+
+* Sberbank had Docker images exposed online.
+* Russian Raiffeisenbank was hacked every day over many months until fix.
+
+The threats come from the east and the bank regulator is about to make the banking application security stricter.
+In practice, simple Sonar and Dependency checker can find out most of the problems including security rating -> the quality gateway should have solid security rating threshold and the rules should be centralized across the company.
+Spring Boot 2.7 is about to end the security patches support, so it is recommended to migrate to Spring Boot 3 as soon as possible.
+
+A huge problem with dependency vulnerabilities is that they are discovered and updated every day, so the checking process should be continual.
+Most of the vulnerabilities come from the 3rd party or legacy dependencies:
+
+* We need to upgrade as often as possible.
+* The proprietary and legacy in-house applications must be checked and maintained.
+
+All above is valid not only for microservice architecture.
+
+=== Observability
+
+==== All logs lead to Elastic
+
+Centralized logging is the must in the microservice architecture (and all the rest) as we don't want to go through the logs of the particular replica in case of exception.
+
+*Basic set-up* (there can be middleware inserted): Filebeat/Fluentbeat -> Logstash (optionally) -> Elastic -> Kibana -> 👤
+
+==== Monitoring and alerting
+
+Without it, we are blind and deaf.
+We can see particular errors in the logs in the methods, but it is needed to see a "whole picture" first to understand what and why it happened.
+
+*Basic set-up*: Prometheus (scrapping endpoints and metrics, alert manager) -> Time-series DB -> Grafana -> 👤
+
+==== Tracing
+
+A mistake can be anywhere between microservices or combined across the microservices: Distributed tracing a must.
+
+*Basic set-up*: Low-level tracing too (Jaeger tracing is a perfect tool, or Zipkin) + Business monitoring (Kiali can construct a diagram of microservices communication) -> 👤
+
+'''
+
+All above are minimum prerequisites for a mature architecture.
+
+== Event-driven architecture
+
+Same as REST, it is not suitable for every use-case and has cons/pros.
+
+=== REST comparison
+
+*Problems*:
+
+* One of endpoints don't work -> Timeouts, retry policy, circuit breaker
+* In case of wrongly configured timeouts, the thread pool for connections (Tomcat has 200 by default) gets depleted as all the threads would wait.
+
+*Solution*: Event-driven architecture as the messages is either processed or not: It can wait until the service is available as long as it needs, though the overhead is managing another service like Kafka or MQ.
+
+=== Patterns
+
+==== link:https://microservices.io/patterns/data/cqrs.html[CQRS] (Command Query Responsibility Segregation)
+
+*Problem*: The application is responsible for managing insert/update/delete/select of an entity which makes the application complex that increases and eventually turns into a monolith -> The unit of scalability becomes the application itself which is not ideal.
+
+*Solution*: CQRS: Separates 2 responsibilities, *commands* (insert/update/delete) from *queries* (selects) into two applications -> The unit of scalability is smaller.
+
+==== CQRS + Read Model
+
+Various clients can use various read methods, for example PostgreSQL serves as the master datasource and for the sake of optimized full-text search which PostgreSQL is not suitable for, the data are replicated to Elastic that serves perfectly for such a purpose.
+
+[,adoc]
+[plantuml,ab-partial-all-1,svg]
+----
+@startuml
+left to right direction
+'top to bottom direction
+
+queue kafka as "Kafka"
+database database as "PostgreSQL"
+database elastic as "Elastic"
+component app1 as "App1"
+component app2 as "App2"
+actor actor1
+actor actor2
+
+kafka ..> database
+kafka ..> elastic
+database <-- app1
+elastic <-- app2
+app1 <-- actor1
+app2 <-- actor2
+@enduml
+----
+
+==== link:https://microservices.io/patterns/data/event-sourcing.html[Event Sourcing]
+
+If we need a log of changes over an entity, event sourcing persists the entity state as a sequence of change events.
+In order to work efficiently with such an entity, we need a current snapshot of its state received with the CQRS pattern, otherwise we need to run through all the events and apply them to get the wanted state.
+
+[,adoc]
+[plantuml,ab-partial-all-1,svg]
+----
+@startuml
+left to right direction
+'top to bottom direction
+
+actor actor1 as " "
+actor actor2 as " "
+queue kafka as "Kafka"
+database database1 as "System snapshot"
+database database2 as "System snapshot"
+component app1 as " "
+component app2 as " "
+
+actor1 --> kafka
+kafka ..> database1
+kafka ..> database2
+database1 <-- app1
+database2 <-- app2
+app1 <-- actor2
+app2 <-- actor2
+@enduml
+----
+
+==== link:https://microservices.io/patterns/data/transactional-outbox.html[Transactional Outbox]
+
+*Problem*: If we need to persist a record to the relation database, *and* send an event into Kafka, the operation is not atomic.
+
+.Wrong approach
+[%collapsible]
+====
+[,adoc]
+[plantuml,ab-partial-all-1,svg]
+----
+@startuml
+left to right direction
+'top to bottom direction
+
+actor actor as " "
+database database as "Database"
+queue queue as "Kafka"
+
+node node as " " {
+  rectangle transaction as "Transaction" {
+    interface start1 as " "
+    interface start2 as " "
+  }
+  start1 --> database: "Insert relation"
+  start2 --> queue: "Emit event"
+}
+
+actor --> node
+@enduml
+----
+====
+
+In the past, there were popular 2-phase commits or distributed transactions, but they are a big nope as they are not scalable and cumbersome to implement, debug and maintain.
+
+*Solution*: Transactional Outbox pattern.
+
+* Solution via polling (not ideal due to polling overhead):
++
+[,adoc]
+[plantuml,ab-partial-all-1,svg]
+----
+@startuml
+left to right direction
+'top to bottom direction
+
+actor actor as " "
+database database as "Database"
+queue queue as "Kafka"
+
+node node as " " {
+  rectangle transaction as "Transaction" {
+    interface start1 as " "
+    interface start2 as " "
+    interface start3 as " "
+  }
+  start1 --> database: "Insert relation"
+  start2 --> database: "Insert outbox"
+  start3 ..> database: "Job: Select"
+  start3 --> queue: "Emit event"
+}
+
+actor --> node
+@enduml
+----
+
+* Solution using CDC (Change Data Capture) for example link:https://debezium.io[Debezium] that can stream database changes:
++
+[,adoc]
+[plantuml,ab-partial-all-1,svg]
+----
+@startuml
+left to right direction
+'top to bottom direction
+
+actor actor as " "
+database database as "Database"
+file log as "DB log"
+component debezium as "Debezium"
+queue queue as "Kafka"
+
+node node as " " {
+  rectangle transaction as "Transaction" {
+    interface start1 as " "
+    interface start2 as " "
+  }
+  start1 --> database: "Insert relation"
+  start2 --> database: "Insert outbox"
+  database --> log
+  log ..> debezium
+  debezium --> queue: "Emit exchange"
+}
+
+actor --> node
+@enduml
+----
+
+==== link:https://microservices.io/patterns/data/saga.html[SAGA]: Choreography-based SAGA
+
+This pattern is a replacement for 2-phase commit or distributed transactions.
+For example: An order is in the `PENDING` state and the "Order Created" event is sent. The *Customer Service* receives the event ands the result (paid / not paid). Finally, the *Order Service* changes the order state to `COMPLETED`.
+
+*Eventual consistency* does not assure immediate consistency but consistency once the cycle is completed (the items might wait in the queue for a while).
+
+[,adoc]
+[plantuml,ab-partial-all-1,svg]
+----
+@startuml
+left to right direction
+'top to bottom direction
+
+skinparam linetype polyline
+
+together {
+  interface postOrders as "POST /orders"
+  hexagon orderService as "Order \nService" {
+    rectangle order as "<size:10><<aggregate>>\n    Order"
+  }
+}
+together {
+  queue queue1 as "Order events channel"
+  queue queue2 as "Customer events channel"
+}
+together {
+  interface postCustomer as "POST /customer"
+  hexagon customerService as "Customer \nService" {
+    rectangle customer as "<size:10><<aggregate>>\nCustomer"
+  }
+}
+
+postOrders -right- orderService
+postCustomer -right- customerService
+orderService --> queue1: "Order created"
+queue1 --> customerService
+queue2 <-- customerService: "Credit reserved"
+queue2 --> orderService
+
+@enduml
+----
+
+==== link:https://microservices.io/patterns/data/saga.html[SAGA]: Orchestration-based SAGA
+
+In case of simple and low number of microservices, choreography-based SAGA solution is good, however in more complex system, orchestration-based SAGA is needed.
+
+The implementation is based on message broker orchestrator that distributes messages.
+
+[,adoc]
+[plantuml,ab-partial-all-1,svg]
+----
+@startuml
+left to right direction
+'top to bottom direction
+
+rectangle orderService as "OrderSerivice" {
+    component orchestrator as "Create order SAGA orchestrator"
+}
+
+rectangle messageBroker as "Message broker" {
+    queue queueReply as "Create order saga reply channel"
+    together {
+      queue queueConsumer as "Consumer Service request channel"
+      queue queueKitchen as "Kitchen Service request channel"
+      queue queueAccounting as "Accounting Service request channel"
+      queue queueOrder as "Order Service request channel"
+    }
+}
+
+queueReply -right[hidden]- queueConsumer
+
+together {
+    component consumerService as "Consumer Service"
+    component kitchenService as "Kitchen Service"
+    component accountingService as "Accounting Service"
+}
+
+
+orchestrator ..> queueConsumer: A (Command): Verify customer
+queueConsumer ..> consumerService
+consumerService --> queueReply:  A (Response): Customer verified
+
+orchestrator ..> queueKitchen: B (Command) Create ticket
+queueKitchen ..> kitchenService
+kitchenService --> queueReply: B (Response): Ticket created
+
+orchestrator ..> queueAccounting: C (Command): Authorize card
+queueAccounting ..> accountingService
+accountingService --> queueReply: C (Response: Card authorized
+
+queueReply --> orchestrator: A + B + C (Response)
+
+@enduml
+----
+
+==== link:https://microservices.io/patterns/apigateway.html[API Gateway]
+
+* Granularity of backend API is a bit different from what client needs: Different clients need different data.
+* We want to split backend APIs for the sake of flexibility.
+
+[,adoc]
+[plantuml,ab-partial-all-1,svg]
+----
+@startuml
+left to right direction
+'top to bottom direction
+
+rectangle clientApps as "Client Apps" {
+  person web as "Web"
+  person mobile as "Mobile"
+}
+
+rectangle microservices as "Microservices" {
+  rectangle apiGateway as "\n\n\n\n\n\n\n\n\nAPI Gateway\n\n\n\n\n\n\n\n\n"
+  component catalog as "Catalog"
+  component shoppingCard as "Shopping Cart"
+  component discount as "Discount"
+  component ordering as "Ordering"
+  database db1 as "DB"
+  database db2 as "DB"
+  database db3 as "DB"
+  database db4 as "DB"
+}
+
+web --> apiGateway
+mobile --> apiGateway
+apiGateway --> catalog
+apiGateway --> shoppingCard
+apiGateway --> discount
+apiGateway --> ordering
+catalog --> db1
+shoppingCard --> db2
+discount --> db3
+ordering --> db4
+@enduml
+----
+
+==== link:https://microservices.io/patterns/apigateway.html[BFF]: Backend for frontend
+
+It is a variation of API gateway pattern defining separate API gateways for each client.
+
+[,adoc]
+[plantuml,ab-partial-all-1,svg]
+----
+@startuml
+left to right direction
+'top to bottom direction
+
+skinparam linetype polyline
+
+rectangle clientApps as "Clients" {
+  person web as "Web browser clients"
+  person mobile as "Mobile clients"
+  person external as "External clients"
+}
+
+rectangle bff as "Backends for Frontends" {
+  component bffWeb as "BFF Web"
+  component bffMobile as "BFF Mobile"
+  component bffexternal as "BFF External"
+}
+
+rectangle apiServices as "API services" {
+  together {
+    component auth as "<size:40><&key>\n\nAuthorization \nand identity provider"
+  }
+  together {
+    component serviceA as "Service A"
+    component serviceB as "Service B"
+    component serviceN as "Service N"
+  }
+}
+
+web --> bffWeb
+mobile --> bffMobile
+external --> bffexternal
+
+bffWeb --> auth
+bffMobile --> auth
+bffexternal --> auth
+bffWeb --> serviceA
+bffMobile --> serviceB
+bffMobile --> serviceN
+bffexternal --> serviceN
+
+@enduml
+----
+
+== Recommended resources
+
+* link:https://www.manning.com/books/microservices-patterns[Microservices Patterns Book] by Chris Richardson.
+

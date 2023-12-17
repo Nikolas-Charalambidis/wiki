@@ -1,0 +1,109 @@
+= Keynote
+:original: Keynote
+:author: Jiří Pinkas
+:length: 41:46
+:date: 12-11-2023
+:language: Czech 🇨🇿
+:quote: Application servers seem are not dead yet.
+
+:rating: 3
+:pros: Compared to the previous year, the speaker less pushed what we must do.
+:pros2: More of time spent with upcoming Spring Boot and Java features.
+:pros3: Spring Modulith was mentioned.
+:cons: The data shown should be accompanied with the previous year data.
+:cons2: I missed more detailed explanation on why popularity of some technologies suddenly dropped.
+
+include::partial$session.adoc[]
+
+== Usage statistics
+
+* **Java version:** Java 8 (31%), Java 11 (28%), java 17 (19%), Java 18 and newer (6%), Kotlin (6%), Groovy (5%), Java 7 and older (3%), Scala (2%)
+* **JRE/JDK distribution:** Oracle Java (30%), Generic OpenJDK (21%), AdoptOpenJdk (15%), other (10%), Amazon Corretto (10%), Azul Zulu (5%), GraalVM (4%), IBM Semeru JDK (4%), OpenLogic JDK (2%)
+** 63% of companies plan to add additional Java developers, 28% are not sure and 9% said no.
+* **Microservices:**: Microservices (32%), Monolith (22%), Modular Monolith (12%), SOA (10%), Desktop App (7%), Mobile App (7%), Serverless (7%), other (3%)
+* **Framework:**
+** Spring Boot (59%), Other (24%), Quarkus (8%), Micronaut (6%), Vert.x (1%)
+* *PaaS*: AWS (22%), Microsoft Azure (15%), none (14%), IBM Cloud (13%), Red Hat Openshift (12%), Google Cloud Platform (8%), Oracle Cloud Platform (3%), other (3%), VMWare Tanzu (2%), Alibaba Cloud (2%), SAP Cloud Platform (2%), Pivotal Cloud Foundry (1%)
+* **Application server:** Tomcat (44%), WebSphere (13%), Jetty (10%), JBoss (9%), none (8%), WebLogic (6%), other (5%), WebLogic (7%), GlassFish (4%)
+** Application servers seem are not dead yet.
+* **IDE:** IntelliJ Idea (42%), Eclipse (27%), VSCode (22%), Netbeans (5%), other (3%), Browser-based IDE (1%)
+* **Build tool:** Most of the people use Maven but Spring Boot defaults to Gradle
+
+== Java 17-21 features
+
+* Virtual Threads (supported as of Spring Boot 3.2)
+* Language improvement
+* Performance improvement
+* JEP 431: Sequenced Collections
++
+Before:
++
+[,java]
+----
+var last = list.get(list.size() - 1);
+----
+After:
++
+[,java]
+----
+var last = list.getLast();
+----
+* Record Patterns and Pattern Matching + `instanceof`
++
+[,java]
+----
+public void print(Object o) {
+    if (o instanceofPosition(int x, int y)) {
+        System.out.printf("o is a position: %d/%d%n", x, y);
+    } else if (o instanceof String s) {
+        System.out.printf("o is a string: %s%n", s);
+    } else {
+        System.out.printf("o is something else:  %s%n", o);
+    }
+}
+----
++
+[,java]
+----
+public void print(Object o) {
+    switch (o) {
+        case Position(int x, int y) -> System.out.printf("o is a position: %d/%d%n", x, y);
+        case String s               -> System.out.printf("o is a string: %s%n", s);
+        default                     -> System.out.printf("o is something else:  %s%n", o);
+    }
+}
+----
++
+[,java]
+----
+Object obj = getObject();
+
+switch (obj) {
+    case String s when s.length() > 5 -> System.out.println(s.toUpperCase());
+    case String s                     -> System.out.println(s.toLowerCase());
+    case Integer i                    -> System.out.println(i * i);
+    case Position(int x, int y)       -> System.out.println(x + "/" + y);
+    default                           -> {}
+}
+----
+* New `String` methods:
+** `String.indexOf(String str, int beginIndex, int endIndex)` - searches the specified substring in a subrange of the string.
+** `String.indexOf(char ch, int beginIndex, int endIndex)` - searches the specified character in a subrange of the string.
+** `String.splitWithDelimiters (String regex, int limit)` - splits the string at substrings matched by the regular expression and returns an array of all parts and splitting strings. The string is split at most `limit-1` times, i.e., the last element of the array could be further divisible.
+* New `StringBuilder`/`StringBuffer` methods: Both `StringBuilder` and `StringBuffer` have been extended by the following two methods:
+** `repeat (CharSequence cs, int count)` - appends to the `StringBuilder` or StringBuffer the string cscount times.
+** `repeat (int code Point, int count)` - appends the specified Unicode code point to the `StringBuilder` or `StringBuffer` - `count` times. A variable or constant of type `char` can also be passed as code point.
+* New `Math` clamp function.
+
+== Spring Boot 3.1 features
+* Release Notes: https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-3.1-Release-Notes
+* Spring Modulith is GA (general availability): https://spring.io/blog/2023/08/21/spring-modulith-1-0-ga-released
+* Testcontainers support: https://spring.io/blog/2023/06/23/improved-testcontainers-support-in-spring-boot-3-1
+* Docker Compose support: https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-3.1-Release-Notes#docker-compose
+
+== Spring Boot 3.2 features
+
+* Release Notes (M2, because 3.2 is not GA): https://spring.io/blog/2023/08/24/spring-boot-3-2-0-m2-available-now
+* `RestTemplate` is dead, long live `RestClient`: https://spring.io/blog/2023/07/13/new-in-spring-6-1-restclient
+* `JdbcTemplate` is dead, long live `JdbcClient`: https://www.danvega.dev/blog/2023/09/11/spring-jdbc-client/
+* Spring Boot 3.2 supports virtual threads: https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-3.2.0-M1-Release-Notes

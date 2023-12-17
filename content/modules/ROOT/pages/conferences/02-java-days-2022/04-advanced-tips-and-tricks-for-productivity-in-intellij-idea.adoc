@@ -62,5 +62,3 @@ This prints out the value of `a` only.
 == Miscellaneous
 * Code → Analyze Stack Trace
 * View → Appearance → Enter presentation mode
-
-include::partial$session-impression.adoc[]

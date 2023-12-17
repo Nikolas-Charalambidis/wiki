@@ -1,0 +1,344 @@
+= Error states aka "Did you try to turn it off and on"?
+
+:original: Ošetřování chybových stavů aneb "Zkusili jste to vypnout a zapnout"?
+:author: Roman Bouchner
+:length: 57:21
+:date: 12-11-2023
+:language: Czech 🇨🇿
+:quote: On requesting a new transaction over the MyISAM storage, the response is that the transaction was created which is misleading.
+
+:rating: 4
+:pros: A first speaker so far finally thinking over the design at all.
+:pros2: Interesting mentions of PostgreSQL design flaw and 1969 Apolo.
+:cons: The "ideal solution" of DB transactions is error-prone if the developer forgets `status.commitTransaction()` due to temporal coupling.
+:cons2: Most of the examples were rather worthy to beginners. I would appreciate more of the real-life scenarios.
+
+include::partial$session.adoc[]
+
+== Story from 20th July 1969
+
+Available on YouTube: link:https://www.youtube.com/watch?v=B1J2RMorJXM[Light Years Ahead | The 1969 Apollo Guidance Computer]
+
+During landing the error 1202 (similar to Windows blue screen of death or kernel panic in Linux) causing the computer to restart over and over.
+
+Luckily due to telemetry the technician decided they can continue.
+AGC (computer) design principles:
+
+* High level language to avoid Assembler (15-bit language)
+* No operating system, so they have prioritized jobs instead (landing is more important than anything else at that moment)
+* Restart on failure and hardware monitors
+* Checkpoint good state that helps to restore the state based on the landing vectors, what activity happens
+* Telemetry to send the real data from computer into the NASA base, something like logging
+
+Nowadays, we usually don't predict what can happen and how to save it. The logging is usually insufficient.
+
+== Errors classification and practical examples
+
+The classification is from production
+
+* User errors (though they are not really errors)
+* Runtime errors, such a NPE, usually logging prevents it
+* Frozen lake, DB connectivity errors etc., these usually don't appear on DEV or TEST environments, which makes these issues unpredictable
+* Nightmare, an error that corrupts and destroys data
+
+== Corrupted data
+
+=== Example: Broken transactions
+
+[,adoc]
+[plantuml,ab-partial-all-1,svg]
+----
+Receipt -> ReceiptItem: 1:N
+----
+
+Typical transaction model: `BEGIN TRANSACTION`, `CREATE RECEIPT`, `CREATE RECEIPT ITEMS` and `COMMIT`/`ROLLBACK`
+
+* The receipt items didn't match and were inconsistent.
+* The following piece of code was erroneous using Android and SQLite.
+
+[,java]
+----
+db.beginTransaction();
+Receipt receipt = ...;
+try {
+    db.insert("RECEIPT_TABLE", null, receipt);
+    for (ReceiptItem item: receipt.getReceiptItems()) {
+        db.insert(RECEIPT_ITEM_TABLE, null, prepareReceiptItem(receipt, item));
+    }
+    db.setTransactionSuccessful();
+} finally {
+    db.endTransaction();
+}
+----
+
+SQLite can commit when a statement in transaction does not succeed, ex. PK violation.
+The method `insert` does not throw exception but returns `-1`, the rollback didn't happen and inconsistent data were persisted.
+The problem was in the design, though it was documented.
+
+How about this situation without transaction?
+
+The solution is not such easy:
+
+* We have to create receipt items first and then create receipts. In case it fails, there are orphans left, which is no wrong consistency-wise. *But* there are useless data, so...
+* In a good will, another developer creates a job to remove orphans. But what if someone hits the time when the job is scheduled? -> Remove only older than 2 hours. *But* what if someone creates an invoice in the future time (Asia where the time is ahead)? So...
+* The entire design is wrong and is led by many edge cases.
+
+*Inappropriate* transaction design:
+[,java]
+----
+@Transactional
+public void updateReceipt(Receipt receipt) {
+    createReceipt(receipt);
+    createReceiptItems(receipt);
+}
+----
+Design-wise the annotation is wrong:
+
+* There is not known whether the transaction was started. The behavior should either continue on existing transaction or throw an exception on missing.
+* When it works? The method must be `public` and the transaction manager must be configured properly. When the method is `private`, the `@Transactional` method does not work, and it is hard to find out unless we know its prerequisites.
+
+Better design?
+[,java]
+----
+TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition));
+try {
+    createReceipt(receipt);
+    createReceiptItems(receipt);
+    transactionManager.commit(status);
+} catch (Exception e) {
+    transactionManager.rollback(status);
+    throw e;
+}
+----
+But this design is also wrong, for instance if a developer introduces a condition and `return` inside the `try` block:
+[,java]
+----
+// ...
+createReceipt(receipt);
+createReceiptItems(receipt);
+if (discount) {
+    processDiscount(receipt);
+    return;
+}
+// ...
+----
+It is even harder to find this issue in multithreaded environments due to the nature of rows locking.
+
+Ideal design:
+[,java]
+----
+try (DbTransaction.Status = dbTransaction.openNewTransaction()) {
+    createReceipt(receipt);
+    createReceiptItems(receipt);
+    status.commitTransaction();
+}
+----
+
+=== Example: MySQL with MyISAM storage
+
+Another example of incorrect design is MySQL (MariaDB) storage where InnoDB is  transactional and MyISAM is not.
+
+On requesting a new transaction over the MyISAM storage, the response is that the transaction was created which is misleading.
+
+=== Example: Multithreading
+
+Beware of multiple threads accessing the common resource, ex. Spring beans with common counters:
+
+[,java]
+----
+@RestController
+@RequestMapping("/counter")
+public class CounterApi {
+    int counter = 0;
+
+    @RequestMapping(value = "/increase", method = RequestMethod.POST)
+    public void increaseCounter() {
+        counter++;
+    }
+}
+----
+The snippet above is wrong and needs to be implemented in the thread-safe way (one of below):
+
+* Good: Wrap the setting and getting with `synchronize (this)`. Beware of `synchronized` that is dangerous and can lead to deadlocks.
+* Better: Use `AtomicInteger` that has already synchronized mechanism implemented.
+
+=== Example: Custom cache implementation
+
+It is dangerous to return the reference as it can be modified by the caller and other parts of the program would work with incomplete/corrupted data.
+
+[,java]
+----
+private final List<Users> usersCache = ...
+
+public List<User> getCachedUsers() {
+    return usersCache;                               // this is wrong
+    return Collections.unmodifiableList(usersCache); // this is correct
+}
+----
+
+== Frozen lake
+
+These kind of errors happen after long time in production.
+Most common errors:
+
+* API calls and timeouts (DEV mocks are nice, production is not)
+* Error-case handling
+* Double calling
+
+It is required to use a reasonable timeout and log inputs, outputs, processing time, and suspicious states.
+
+=== Example: API timeouts
+
+A typical case are reports that can take too long time to process beyond the standard report time.
+
+It is a good way to return a promise to the user that we cannot generate report now and that it will be sent via email, so it prevents from requesting further and further reports.
+
+link:https://spoilerproxy.com/[Spoiler Proxy] is a good source to start with microservice testing.
+
+=== Example: Deadlocks
+
+Custom `synchronized` implementation is error-prone to deadlocks.
+The `synchronized` block should be as short as possible.
+
+The snippet below almost certainly cause the system to freeze due to large amount of blocked operations.
+
+It also undermines the advantages of multithreading.
+
+[,java]
+----
+public void calculateData() {
+    synchronized (this) {
+        File file = readFromFile();
+        CalculatedData data = processAndCalculate(file);
+        saveResult(data);
+    }
+}
+----
+
+The `@Transactional` annotation becomes also problematic as it locks the records during the long REST API call (timeouts are usually set in seconds).
+
+[,java]
+----
+public void calculateData() {
+    Data data = readFromDatabase();
+    updateUser();
+    callRemoteApi(data);
+}
+----
+
+Solutions:
+
+* Application design should be simple (KISS) and we should think "what if..."
+* Log all suspicious states, inconsistencies, slow operations...
+* Actively trace and resolve a strange error that happens once a week.
+
+== Runtime errors
+
+Java has a robust system of exception handling.
+
+What we want to know?
+
+* The error occurred from logs before the user reports it.
+* The whole stacktrace.
+* The additional information (user ID, mobile application ID, ...)
+* The parameters the request was called (beware of logging the sensitive information)
+* The flow of the API calls.
+
+Solution:
+
+* Unique request ID, for example UUID, that is also displayed to the user that can report it and send to other APIs in a header
+* Use Kibana (ELK) for tracing:
+** Beats and Logstash parse data
+** Elasticsearch is a database
+** Kibana is the UI
+* Request context using `ThreadLocal` which is better over `@Scope(value = WebApplicationContext.SCOPE_REQUEST)` because it is limited to HTTP servlet (so jobs would not work).
++
+[,java]
+----
+@AllArgsConstructor
+@Getter
+public class RequestContext {
+
+    private final String requestId;
+    private final UserId userId;
+    private final Locale locale;
+    private final boolean testMode;
+}
+----
++
+[,java]
+----
+@Service
+public class RequestContextService {
+
+    private final ThreadLocal<RequestContext> threadLocal = new ThreadLocal<>();
+
+    public void attachRequestContext(RequestContext requestContext) {
+        threadLocal.set(requestContext);
+    }
+
+    public void detachRequestContext() {
+        threadLocal.remove();
+    }
+
+    public RequestContext getRequestContext() {
+        return threadLocal.get();
+    }
+}
+----
+
+=== Example: Incorrect exception handling
+
+Few horrible examples:
+
+- The error that will never happen will eventually happen:
++
+[,java]
+----
+try {
+    updateUser();
+} catch (Exception e) {
+    // this will never happen
+}
+----
+- The thrown exception ignores the cause and the information is lost:
++
+[,java]
+----
+try {
+    updateUser();
+} catch (Exception e) {
+    throw new RuntimeException("Unexpected error");
+}
+----
+
+It is a good practice to enrich the thrown exception:
+
+. {empty}
++
+[,java]
+----
+throw new RuntimeException("Cannot update user: " + userName + " " + e.getMessage(), e);
+----
+. Catch the error in a central `ExceptionHandler` and add RequestId, UserId, IP address, UserAgent, URI, etc.
+
+TIP: Include a space between the outputs `user: Nikolas` otherwise Kibana would not find it.
+
+Java design is odd:
+
+* `IOException` is checked though should be unchecked it is unnecessary as it can happen anytime while working with DB, disk, network, etc.
+* `NumberFormatException` is unchecked though should be checked as it is commonly handled.
+
+== User errors
+
+* User inserts incorrect data so we need to validate them.
+* Distinguish between user and system errors.
+* Beware of logins and do not use `ERROR` for user inputs.
+* Use HTTP return codes correctly, for example 400 Bad Request and 500 Internal Server Error. Try to avoid 404 Not Found.
+* Localize the error message.
+* It is a good practice to distinguish the errors using `Exception` subclasses, for example `throw new UserException("error.user.invalidUserNameOrPassword");`.
+
+== Contact and Q&A
+
+Website: link:https://goodbackend.com/[Good Backend].
+

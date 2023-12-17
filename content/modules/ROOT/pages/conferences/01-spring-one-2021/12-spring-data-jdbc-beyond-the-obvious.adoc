@@ -36,7 +36,7 @@ We can persist an entity with an object property having further properties as JS
 *To write:* Implement `Converter<MyEntityData, JdbcValue>`, annotate converter with `@WritingConverter`, and store as `JdbcValue.of(json, JDBCType.VARCHAR)`/
 *To read:* Implement `Converter<JdbcValue, MyEntityData>`, annotate converter with `@ReadingConverter`, and read from JSON
 
-It is needed to create a configuration class (annotated with `@Configuration`) extending from AbstractJdbcConfiguration` overriding and registering a bean of `JdbcCustomConversions`.
+It is needed to create a configuration class (annotated with `@Configuration`) extending from `AbstractJdbcConfiguration` overriding and registering a bean of `JdbcCustomConversions`.
 
 == Bidirectional relationship
 

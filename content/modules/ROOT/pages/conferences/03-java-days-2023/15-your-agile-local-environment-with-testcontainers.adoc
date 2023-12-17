@@ -1,0 +1,337 @@
+= Your agile local environment with Testcontainers
+
+:original: Vaše agilní lokální prostředí s Testcontainers
+:author: Tomáš Řehák
+:length: 42:19
+:date: 16-11-2023
+:language: Czech 🇨🇿
+:quote: A common pitfall is an urge to test every `private` method or mock 30 dependencies in order to test a service.
+
+:rating: 5
+:pros: He said Java is the best programming language.
+:pros2: Great examples of how to manage and run Testcontainers.
+:pros3: Worthy mention that each of us perceive a term "integration test" differently.
+
+include::partial$session.adoc[]
+
+== Testing pyramid
+
+Test best practices: Unit tests, Integration tests and E2E tests.
+Testing pyramid depends on the project lifecycle.
+
+* Unit tests
+  * Test both code *and* design.
+  * A common pitfall is an urge to test every `private` method or mock 30 dependencies in order to test a service.
+This is not what we want.
+
+* Integration tests
+  * Starts the application integrating with anything else (databases, services, MQs, etc.).
+  * We can use mocks or Testcontainers.
+
+* E2E tests
+  * Starts your application ecosystem in a private environment and tests from the client perspective.
+  * Tests from the client perspective from the high-level point.
+  * Usually acceptance Selenium FE tests is a common practice.
+
+== Integration testing with Testcontainers
+
+Test isolation is an issue: Test A changes data and B reads modified data -> it can be a problem.
+Solutions:
+
+* Make sure tests will never collide.
+* Clean-up your data
+
+=== Cleaning-up the data
+
+* Spring supports with a lot of annotations a basic clean-up and data-consistency among the integration tests.
+* Containers themselves have no clean-up mechanisms as PostgreSQL has no command to clean up the database or in Kafka to remove all the topics.
+* The clean-up has to be written by hand (automatic scripts) which is really fast to execute (few milliseconds), though restarting a container is also quick (few seconds) but there are many containers taking tens of seconds to start-up, for example SeaweedFS:
++
+.`AbstractIntegrationTest.java`
+[%collapsible]
+====
+[,java]
+----
+@ActiveProfiles (resolver = Abstract Integration Test.SpringActiveProfileResolver.class)
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ContextConfiguration(initializers = {LocalEnv. Initializer.class})
+@Configuration
+public abstract class AbstractIntegrationTest {
+
+    public static class SpringActiveProfileResolver implements ActiveProfilesResolver {
+
+        @Override
+        public String[] resolve (Class<?> testClass) {
+        final String localRun = System.getenv( name: "LOCALRUN");
+        if (localRun == null) {
+            return new String[]{"test"};
+        } else {
+            return localRun.split( regex: ",");
+        }
+    }
+
+    private final AtomicReference<Boolean> initialized = new AtomicReference<>(false);
+
+    @Autowired
+    protected JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    @Qualifier("scraperS3Client")
+    protected S3Client scraperS3Client;
+
+    @Valie("crawlers")
+    protected String scraperS3Bucket;
+
+    ...
+
+    @BeforeEach
+    @Before
+    public void setup() {
+        PgEnv.cleanup(jdbcTemplate);
+        if (initialized.compareAndSet(false, true)) {
+            LoadBlobz();
+            if (!scraperS3Client.getClient().doesBucketExistV2 (scraperS3Bucket)) {
+                scraperS3Client.getClient().createBucket(new CreateBucketRequest(scraper$3Bucket, "eu-central-1"));
+                LoadData(scraper$3Client, scraperS3Bucket, dir: "scraper");
+        }
+    }
+
+    private Path getTestDataBasePath() throws Exception {
+        final URL resource = Abstract Integration Test.class.getResource(name: "/testdata/readme.md");
+        final Path absolutePath = Paths.get(resource.toURI()).toAbsolutePath().getParent();
+        return absolutePath;
+    }
+}
+----
+====
++
+.`PgEnv.java`
+[%collapsible]
+====
+[,java]
+----
+public class PgEnv {
+
+    public static final PostgreSQLContainer PG_CONTAINER = new PostgreSQLContainer("postgres:latest");
+
+    private static final String TRUNCATE ALL = """
+        CREATE OR REPLACE FUNCTION truncate_tables (username IN VARCHAR) RETURNS void AS $$
+        DECLARE
+            statements CURSOR FOR
+                SELECT tablename FROM pg_tables
+                WHERE tableowner = username AND schemaname = 'public' AND tablename NOT LIKE 'databasechangelog%';
+        BEGIN
+            FOR stmt IN statements LOOP
+                EXECUTE 'TRUNCATE TABLE' || quote_ident (stmt.tablename) || 'CASCADE;';
+            END LOOP;
+        END;
+        $$ LANGUAGE plpgsql;
+        """;
+
+    public static void init() {
+        try {
+            if (!PG_CONTAINER.isRunning()) {
+                PG_CONTAINER.start();
+                LoggerFactory.getLogger(PgEnv.class).info("PostgreSQL JDBC URL: {}", PG_CONTAINER.getJdbcUrl());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void cleanup(final JdbcTemplate template) {
+
+        try {
+            template.execute(TRUNCATE_ALL);
+            template.execute( sql: "SELECT truncate_tables ("+ PG_CONTAINER.getUsername() + "')"); } catch (Exception e) {
+        }
+        throw new RuntimeException(e);
+    }
+}
+----
+====
+
+=== Integration testing with Testcontainers
+
+. Define application dependencies
+. Run containers in separate process
+. Set correct properties
+. Define cleanup rules after each test - this is container specific (PostgreSQL, Kafka...)
+. Get your setup ready for integration tests with separate Testcontainers
+
+We want to run Testcontainers statically, i.e. we want to share the container among the tests to prevent creating and starting a new container overhead for every test (see the `PgEnv#init` method).
+
+We can offload running the Testcontainers on CI/CD if we are interested in the results only, but the containers  are lost afterward. The integration tests are the core of the development which help to fine-tune the system, so running the Testcontainers locally helps for testing over and over without a need of restarting, but brings an overhead of data and version management -> The Testcontainers environment should be identical for testing on the localhost and CI/CD (via Jenkins pipeline). -> It can be realized via `@ContextConfiguration(initializers = {LocalEnv.Initializer.clas})` that starts all the containers required. (The `DynamicPropertyRegistry` allows to add a property dynamically during runtime.)
+
+.`LocalEnv.java`
+[%collapsible]
+====
+[,java]
+----
+public class LocalEnv {
+
+    private final static Map<String, Object> CONTAINER_PROPERTIES = new HashMap<>();
+
+    public static class Initializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+
+        @Override
+        public void initialize(ConfigurableApplicationContext ctx) {
+            if (!ctx.getEnvironment().matchesProfiles("localtransient")) {
+                final DynamicPropertyRegistry registry = TestcontainersPropertySource.attach(ctx.getEnvironment());
+                try {
+                    runEnv(false);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                CONTAINER_PROPERTIES.forEach((key, value) -> registry.add(key, () -> value));
+            }
+        }
+
+        public static void main(String[] args) throws Exception {
+            runEnv(true);
+        }
+
+        private static void runEnv (boolean wait) throws IOException {
+            final DynamicPropertyRegistry registry = (name, valueSupplier) -> { CONTAINER PROPERTIES.put(name, valueSupplier.get());
+        };
+        // create containers
+        System.out.println("Starting test containers");
+        System.out.println("Starting PG container");
+        pg(registry);
+        System.out.println("Starting S3 container");
+        s3(registry);
+        System.out.println("Starting Kafka container"); kafka (registry);
+        System.out.println("Starting Nginx container"); nginx (registry);
+        System.out.println("Starting Frontend container");
+        frontend (registry);
+        System.out.println("Test containers started"); // write properties to local profile file final StringBuilder sb = new StringBuilder();
+        CONTAINER_PROPERTIES.forEach((key, value) -> sb.append(key).append("=").append(value).append("\n");
+        Files.write(Path.of("application-localtransient.properties"), sb.toString().getBytes());
+        if (wait) {
+            System.out.println("Press enter to exit...");
+            System.in.read();
+        }
+    }
+
+    public static void frontend(DynamicPropertyRegistry registry) {
+        final GenericContainer container = new GenericContainer<>("docker-registry.agrp.dev/crawler/scraper-ui:main");
+        container.addEnv ("REACT_APP_WS_BACKEND_URL", "ws://localhost:8083");
+        container.setNetworkMode("host");
+        container.start();
+    }
+
+    public static void nginx(DynamicPropertyRegistry registry) {
+        final GenericContainer nginx = new GenericContainer<>("nginx:latest");
+        nginx.withCopyFileToContainer(MountableFile.forHostPath(Path. of ("src/test/resources/nginx.conf")), "/etc/nginx/conf.d/default.conf");
+        nginx.setNetworkMode("host");
+        nginx.start();
+        System.out.println("Scraper frontend running on http://localhost:8080");
+        registry.add("scraper.frontend.url", () -> "http://localhost:8080");
+    }
+
+    public static PostgreSQLContainer pg(DynamicPropertyRegistry registry) {
+        PgEnv.init();
+        registry.add( name: "spring.datasource.url", ()-> PgEnv.PG_CONTAINER.getJdbcUrl());
+        registry.add(name: "spring.datasource.username", () -> PgEnv.PG_CONTAINER.getUsername());
+        registry.add(name: "spring.datasource.password", () -> PgEnv.PG_CONTAINER.getPassword());
+        return PgEnv.PG_CONTAINER;
+    }
+
+    public static KafkaContainer kafka(DynamicPropertyRegistry registry) {
+        KafkaEnv.init();
+        registry.add("spring.kafka.bootstrapServers", () -> KafkaEnv.KAFKA_CONTAINER.getBootstrapService());
+        return KafkaEnv.KAFKA_CONTAINER;
+    }
+
+    public static GenericContainer s3(Dynamic PropertyRegistry registry) {
+        S3Env.init();
+        if (registry!= null) {
+            registry.add(name: "scraper.s3.endpoint", () -> "http://" + S3Env.getHost() + + S3Env.getPort());
+            registry.add(name: "scraper.s3.accesskey", () -> "seaweed-access-key");
+            registry.add(name: "scraper.s3.secretKey", () -> "seaweed-secret-key");
+            registry.add(name: "scraper.s3.bucket", () -> "test-scraper-blobs");
+            // tmp $3
+            registry.add(name: "blobs.s3.endpoint", >"http://" + S3Env.getHost() + ":" + S3Env.getPort());
+            registry.add(name: "blobs.s3.accessKey", () -> "seaweed-access-key");
+            registry.add(name: "blobs.s3.secretKey", () -> "seaweed-secret-key");
+            registry.add(name: "blobs.s3.bucket", () -> "test-datastore-blobs");
+        }
+    }
+}
+----
+====
+
+The behavior of Testcontainers is that it exposes the containers to the random available ports, i.e. the PostgreSQL will not run on 5432.
+A good practice is to load dynamically these dynamic properties to `application-localtransient.properties` and run the tests with the `localtransient` profile.
+Without the profile, the tests start the containers first which can take several seconds (useful for CI/CD) but for repeated run because of localhost fine-tuning, it is better to run the Testcontainers aside and run the test with such a profile to connect to the existing containers.
+
+=== Lessons learned
+
+* Fast integration tests feedback loop.
+* Run application locally right after checkout with nothing else needed.
+* Hard to create shared environment for several applications talking to each other and using shared services.
+* It is good to avoid `sh` scripts because not everyone runs on Linux/MacOS.
+* Work in progress, ideas:
+  * VPB (wg) into dedicated Kubernetes environment with containers and services set-up by automation
+  * This Kubernetes can be remote or local (K32, Minikube, etc.), but it might require 100 GB RAM.
+  * Extend containers with data clean-up support.
+  * Have a single `LocalEnv` project with single clean-up method - offload to DevOps.
+
+=== Conclusion
+
+* Local run is important.
+* Local run speed is important.
+* Local run test feedback loop is important.
+* Offloading cognitive burden of local run is important.
+
+== Q&A
+
+. Tom: In memory H2 is a good option.
++
+> "It is a common set-up, and it is *wrong* because the DB is not same: It is not possible to use PostgreSQL-specific implementation and test it in H2."
+
+. Michal Davídek: The hardest issue is to parallelize the integration tests. The only way is to write the tests to not collide which is near-to-impossible. Any ideas?
++
+> "The tests by default run in serial. In case of parallel tests, it is hard to write them in the manner they don't collide so DB instance sharding is the only way."
+
+. Marek Frank: Can be the integration tests written using Testcontainers run in multiple threads?
++
+> "I don't know as I didn't try to run them like that. The containers are `static` so the clean-up would affect other threads."
+
+. Michal Mikulášek: Is a Ryuk containers needed? Although Jenkins daemon option is enabled, the Ryuk containers remain tangling upon finishing.
++
+> "Usually Jenkins itself cause the issue with Ryuk. It is needed to check the versions, environment variables, etc. We use default setup of Ryuk."
+
+. Unknown in audience: What to do if the containers require data in PostgreSQL or Kafka?
+ˇ
++
+> "There is a method `loadBlobz` (from the snippets above) in `AbstractIntegrationTest" as well as in the particular tests (loading JSON resources)"
++
+.`LcrEditorTest`
+[%collapsible]
+====
+[,java]
+----
+class LcrEditorTest extends AbstractIntegrationTest {
+
+    @Autowired
+    private LcrEditorService lcrEditorService;
+
+    public void loadJson() {
+        try (final InputStream jsonIn = AbstractIntegrationTest.class.getResourceAsStream("/testtdata/CR10.json") {
+            lcrEditorService.loadJson(jsonIn);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    voic shouldGetLrcMain() {
+        loadJson();
+        ...
+    }
+}
+----
+====
+

@@ -1,0 +1,189 @@
+= Upgrade to Spring Boot 3
+
+:original: Upgrade na Spring Boot 3
+:author: Kamil Ševeček
+:length: 57:55
+:date: 12-11-2023
+:language: Czech 🇨🇿
+:quote: CRac is more sound to developers than GraalVM.
+
+:rating: 5
+:pros: Extremely useful overview of upcoming features mentioning `RestClient` and `JdbcClient`.
+
+include::partial$session.adoc[]
+
+We celebrate 20 years of Spring Framework and 10 years of Spring Boot.
+The biggest importance is BOM of common dependencies because Spring defines
+version of libraries that work together and are also safe security-wise (use latest patches, etc.)
+
+== Dates and Timeline
+
+* Jakarta EE
+** Jakarta EE 9 is just packaging changes with renames `javax.*` to `jakarta.*` causing big-bang and a lot of libraries weren't ready
+** Jakarta EE 10 brings improvements.
+** Jakarta EE 11 will bring Servlet 6.1 and JPA 3.2
+* JDK 17 - Records, Text blocks, NPE messages, AArch64 (it is usually a cheaper alternative)
+* JDK 21 - Virtual Threads, SequenceCollections, Default charset is `UTF-8`, Linux/RISC-V
+
+Spring Boot 3 has not released a statement whether it is officially supporting JDK 21, though it can run on top of it but use no features.
+
+* Spring Boot 3.2.X and Spring Framework 6.1.X will be released in Dec 2023.
+* Spring Boot 2.6.X and Spring Framework 5.2.X will stop being supported as of Jan 2024.
+* After 2025, it will be necessary to either migrate to Spring Boot 2.7.X (Spring 5.3.X) or Spring Boot 3.1.X/3.2.X (Spring 6.1.X).
+
+== News in Spring Framework 6
+
+* Start-up optimization.
+** GraalVM + native image, Spring AOT.
+** JVM Checkpoint Restore (CRaC).
+* Virtual Threads as of JDK 21.
+* WebFlux (Reactive): They filled the gaps.
+* Micrometer & Observability.
+* Data Binding & Validation simplified and cleaned.
+
+=== GraalVM + Native Image
+
+== Pros and Cons
+
+*Pros*:
+====
+* Extremely fast startup, saves memory 2x-5x, similar speed as JVM in runtime (might be a bit slower)
+====
+
+*Cons*:
+====
+* Very slow compilation in terms of minutes
+* No dynamic class loading
+* Explicitly listed: reflection, proxy, serialization
+* No changes to beans (only properties change)
+* Kills Spring profiles (need for multiple layers)
+* Fixed x86_64, AArch64 processor type
+====
+
+*Spring AOT*:
+
+* Ahead-of-time preprocessing of Spring ApplicationContext
+* `@Conditional` must be evaluated in advance
+* Eliminates most of reflection
+* Pre-generating proxies
+
+=== JVM Checkpoint Restore (CRac)
+
+This is more sound to developers than GraalVM.
+
+* JDK 21 and Spring Framework 6.1 and Spring Boot 3.2
+* Checkpoint -> Snapshot (something like hibernation) -> Restore
+* Container/Bean Lifecycle revisited since Srping 3.X
+** Release of OS resources on snapshot (file handles, sockets, hWND,...)
+** ApplicationContext (`start()`, `stop()`, `restart()` - this brings callback to restore beans)
+** `ThreadPoolTaskExecutor` & `ThreadPoolTaskScheduler`
+* Results (Spring integrates it): https://github.com/spring-projects/spring-checkpoint-restore-smoke-tests
+
+*Pros*
+====
+* Very fast startup
+* Flexibility of JVM
+====
+
+*Cons*
+====
+* Linux only (similar to Docker)
+* Manual lifecycle management for manual resources (open files, sockets...)
+* Sensitive data leak to snapshot (passwords, keys -> possible update config when restart)
+====
+
+== Future: Spring Framework 6.2
+
+Project Leyden as a proof of concept for faster bootstrap in HotSpot.
+Spring supports this but it is too early.
+Class data sharing -> one computer more JVM can share the same classes (JVM classes for now but they think of enabling to client libraries -> Spring is interested in it).
+
+=== Virtual threads
+
+* Improvements for Spring MVC (embedded Tomcat and Jetty), so each request will not have own thread, because now the threads are blocking I/O,
+* Virtual threads must not be pooled
+* Improves imperative programming for better scalability (Servlet, Spring MVC, JDBC drivers).
+* `ThreadPoolTaskExecutor` -> `SimpleAsyncTaskExecutor` and `ThreadPoolTaskScheduler` -> `SimpleAsyncTaskScheduler`
+* Spring Boot:
+** Executors can use virtual threads by default (`spring.threads.virtual.enabled=true`)
+** Embedded Tomcat & Embedded Jetty can use virtual threads.
+
+=== WebFlux / Reactive improvements
+
+* Filling the gaps:
+** Support for `CompletableFuture` everywhere
+** Async Cache SPI (built on `CompletableFuture`)
+** Scheduling with reactive types
+** Better support for Kotlin Coroutines
+* `WebClient`
+** Added adapter on top of JDK `HttpClient` (`JdkClientHttpConnector`) as of Spring 6.1.X  in addition to Apache HttpComponents, Reactor Netty, etc.
+
+=== Other improvements
+
+* `HttpStatus` will become `class` instead of `enum`.
+* `RestClient` is a non-reactor sibling to `WebClient` as a fluent API replacement for `RestTemplate` (get rid of tons of overloaded methods).
+* `JdbcClient` as a replacement for JdbcTemplate as a fluent API (get rid of tons of overloaded methods).
+
+=== HTTP interface clients
+
+* Introduced `@HttpExchange` repository interfaces (inspired by Spring Data repositories).
+* HttpServiceProxyFactory generates Client proxies based on `RestClient`.
+
+[,java]
+----
+@HttpExchange
+interface BookRepository {
+
+    @GetExchange("/books")
+    List<Book> getBooks();
+
+    @GetExchange("/books/{id}")
+    Book getBook(@PathVariable long id);
+
+    @PostExchange("/books")
+    Book svaeBook(@RequestBody Book book);
+
+    @DeleteExchange("/books/{id}")
+    ResponseEntity<Void> deleteBook(@PathVariable long id);
+}
+----
+
+== News in Spring Boot 3
+
+* Focuses a lot on start-up that if slow is an obstacle for cloud.
+* BOM = Boot starters updated to newest major versions.
+* Spring Boot 2.7 -> Spring Security 5.7 (supports Spring Security 5.8)
+* Spring Boot 3.0 -> Spring Security 6.0
+* Log4J2 extension enables profile specific configuration: `log4j2-profileName.xml`
+
+=== Micrometer
+
+* Micrometer Observability API & Micrometer Tracing is like Slf4j for moniforing
+* Observability API: `ObservationRegistry`, `@Observed` aspect, `Observation.Context` (hold tags)
+* Distributed tracing context propagation: Across multiple apps, log correlation, support for W3C context propagation (to tag observations)
+* Spring Boot auto-configuration can enable things above
+
+=== Support for Docker Compose
+* You can run PostgreSQL along with the app.
+* Improved support for Testcontainers: `org.springframework.boot.autoconfigure.service.connection.ConnectionDetails`: DB connection configuration is not from `application.properties` files but obtained programatically by `ConnectionDetails` implementation (source properties, Docker compose, Testcontainers, possibly in the future AWS Secrets Manager, Azure Key Vault, etc.)
+
+=== Spring OAuth 2.0 Authorization Server
+
+Complements Spring Security OAuth 2.0:
+
+* Client
+* Resource Server (Web app)
+* **Authorization server** (Token server) is a *new* Spring feature.
+
+== Migration
+
+See link:https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-3.0-Migration-Guide[Spring Boot 3.0 Migration Guide].
+
+* Upgrade Jakarta EE 10 -> Big bang 💀
+* Upgrade to OpenJDK 21 (LTS) 🎉, perhaps forget about OpenJDK 17 (LTS)
+* Maintain old libraries for OpenJDK 11 (LTS) - Gradle toolchains (Maven does not support it)
+* Since Spring Boot 2.7
+** `META-INF/spring.factories` property `org.springframework.boot.autoconfigure.EnableAutoConfiguration` changed to:
+*** `META-INF/spring/org.springframework.boot.autoconfigure.Autoconfiguration.imports`
+*** `META-INF/spring/org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration.imports`
+* Spring Boot Property Migrator: `org.springframework.boot`:`spring=boot-properties-migrator` flags old properties and works well with IntelliJ IDEA.

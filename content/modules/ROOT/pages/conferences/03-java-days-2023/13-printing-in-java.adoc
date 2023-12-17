@@ -1,0 +1,147 @@
+= Printing in Java
+
+:original: Jak na tisk v Javě
+:author: Petr Adámek
+:length: 50:55
+:date: 15-11-2023
+:language: Czech 🇨🇿
+:quote: The technology is considered **feature complete**. TeX is considered feature complete since 1990. Btw. The working group can be again composed and opened if needed.
+
+:rating: 5
+:pros: Eyes-opening session about XSLT proving that it is really not dead and is a great feature-complete tool with sound arguments against "why is it obsolete".
+:pros2: Excellent choice of use-cases.
+
+include::partial$session.adoc[]
+
+== Criteria for printing solution comparison
+
+* Output formats (direct print, PDF, PCL, PS, ODF, OOX, HTML)
+* Output layout/style customization (ease of adjustments, level of skills required, WYSIWYG (interactively), precise positioning)
+* Supported input data format/style
+* API
+* License
+
+=== Jasper Reports
+
+* Favorite solution since 2001 supporting various programs with good documentation, API, WYSIWYG designer and fairly pleasure license (LGPL)
+* It supports various types of input data (JDBC, JavaBeans, Map, XML, CSV, custom 2D data (tables)) and is mostly oriented to  2D data
+* Minor cons that it is not good with complex and recursive data (though most of data are represented through relation tables = 2D)
+
+=== iText
+
+* Powerful Java library for manipulating PDF
+* The licence is not that friendly (AGPL since 5.x) that requires sharing the source code if used, though a commercial solution is available
+* Useful also for post-processing PDF created by another solution
+
+=== HTML + CSS
+
+* Vert simple and efficient for printing from web browser
+* Reusing standard and well-written technologies with no specific skills required
+* Templates can be created using common template frameworks (Velocity, Freemarker)
+* The precision of the styling is rather high, though not perfect
+
+=== EngageOne
+
+* One of many representative of commercial solutions
+* "A single platform to design and deliver personalized, interactive communications across Video, Chatbots, Email, SMS, and PDF".
+* Massive, expensive though powerful
+* https://www.precisely.com/product/engageone-communicate/engageone-communicate
+
+=== XSL
+
+* Interesting and commonly not well-perceived
+* XSL is a family of XML technology for formatting and transforming XML documents
+** XSLT is language for transforming (not only) XML into various formats (HTML or XSL-FO)
+** XSL-FO is language for XML document formatting
+** XPath, XQuery.. but not relevant for printing itself
+* Great for DocBook
+* Is it obsolete?
+** XML is dead: Yes, we have other formats for structured data (JSON, YAML, protocol buggers), however it is still widely used for **semi-structured data**, for document oriented applications, or when it is convenient due to related technologies
+**   Examples: Not really great for structured but semi-structured data (for example HTML itself, free text), the structure is free, not strict, this is a good example where JSON would fail.
+** The tools are not actively developed: Saxon 12.3 released July 4, 2023 (one of the best). Apache FOP 2.9 released 22 Aug 2023
+**  XSL-FO is not actively developed: Last update for working draft was in Jan 2012, working group is closed in November 2013 -> The technology is considered **feature complete**. TeX is considered feature complete since 1990. Btw. The working group can be again composed and opened if needed.
+
+> "I cannot agree with anybody saying XML is dead. It does not make sense to push it where there are more reasonable alternatives, though it does not mean the technology is dead and has no meaning."
+
+> "Though the technology is no developed, it does not mean the tools are either"
+
+* Apache FOP is a XSL-FO processor from Apache Foundation (so has Apache License that is nice). It is a CLI or Java API
+** Output formats: PDF (best supported, recommended, includes some extensions, but NOT watermarks and signatures, though they can be resolved by posprocessing by iText), PostScript, PCL, RTF, Java2D/AWT, Direct print, TIFF, PNG, XML (for testing purposes), TXT (tries to keep layout though limited)
+
+== Examples
+
+=== Personal documents
+
+* XML, XSD, XSL
+
+The XSLT is designed to resemble HTML and CSS as much as possible, though it often also unreasonable and unintuitive.
+
+[,xml]
+----
+<!-- XSLT processor. -->
+<dependency>
+    <groupId>net.sf.saxon</groupId>
+    <artifactId>Saxon-HE</artifactId>
+    <version>10.3</version>
+</dependency>
+
+<!-- Formatting processor. -->
+<dependency>
+    <groupId>org.apache.xmlgraphics</groupId>
+    <artifactId>fop</artifactId>
+    <version>2.9</version>
+</dependency>
+----
+
+Saxon is good because it supports XSLT 2.
+
+To support Czech language, it is required to include a `xconf` file (KOSEK).
+
+Phases:
+
+. XSLT processor
+. FOP processor
+
+The XSLT result does not need to be stored on disk but can be passed directly to FOP processor.
+
+Millimeter precision of layouts.
+It can generate
+
+=== Use cases
+
+* Wine Price List
+** Multiple output formats from single input
+*** General Price List (simple table)
+*** Wine Catalog (with details)
+*** Wine Tasting Card (with room for customer notes)
+*** Order (with form for customer name and address and column for specifying bottle count)
+** Semi-structured data
+*** Description of the wine with simple formatting and links
+* Winemakers club management
+** Multiple output formats from single input (invitations to various events, attendance list, voting cards, price list)
+** Combining data from multiple sources (in DB, can return XML)
+** Invitation to annual meeting (members list, invitation letter template, data from accounting, power of attorney, QR payment)
+** Semi-structured data
+** QR code is challenging, it is an image and the goal was to use XSLT
+*** Plugin to XSLT? Java code?
+*** Easy solution: insert an image like HTML (URL from REST)
+
+== Conclusion
+
+* Jasper Reports is perfect when:
+** We need customizable templates by common users
+** The content and wide output formats support is more important than typographic quality
+** Our data are mainly table based
+* XSL could be viable alternative when:
+** We need total control over layout and high typographic quality
+** We can accept that customizing templates requires specific skills (XSLT and XSL-FO)
+** We need high flexibility in the way how the data are processed/combinerd
+** We need to work with more complex data structures
+** We like **data oriented approach**, i.e. flexible, no programming, data-first
+
+== QaA
+
+* INFO: Opensource replacement of iText is OpenPDF and newest Jasper use OpenPDF
+* Why HTML.Thymeleaf,etc. is not used? It makes also sense, yet another solutions.
+* INFO: XML is a standardized way created for the US army to exchange documents (semi-structured) data in the unambiguous format (SGML).
+

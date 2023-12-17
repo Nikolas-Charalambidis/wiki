@@ -1,0 +1,720 @@
+= evitaDB - quick database for e-commerce
+
+:original: evitaDB - rychlá databáze pro e-commerce
+:author: Jan Novotný
+:length: 54:23
+:date: 14-11-2023
+:language: Czech 🇨🇿
+:quote: evitaDB offers what others don't because it focuses on a smaller segment of the market.
+
+:rating: 5
+:pros: The speaker proved he was truly an author of evitaDB as his speech was fluent and purely informative.
+
+include::partial$session.adoc[]
+
+== Problem domain
+
+* Catalog huge e-commerce web applications
+* Big amount of connected data:
+** 100k+ items and relations
+** Millions of prices and attributes
+** The vast majority of operations are read-only
+* Caching problem
+** High amount of combinations and relations, that cannot be cached at once
+** Requirements for accuracy and exactness of data (stored items, prices) that change rapidly
+* Requirements for low latency and high throughput
+* Repeating scenarios
+
+=== Command Query Responsibility Segregation (CQRS)
+
+It is a common pattern in this domain: Separated data and conceptual models for data writing and management (primary store) and reading (secondary store).
+
+(More about CQRS at xref:conferences/03-java-days-2023/09-microservices-event-driven-architecture-in-tech-company-partner-session-kb.adoc[Microservices + Event Driven Architecture in tech. company | Sponsored talk from KB].)
+
+[,adoc]
+[plantuml,ab-partial-all-1,svg]
+----
+@startuml
+left to right direction
+'top to bottom direction
+
+person client as "Client"
+hexagon ui as "UI"
+together {
+   hexagon command as "Command"
+   hexagon query as "Query"
+}
+together {
+  database write as "Write database"
+  note right of write
+    Tables
+  end note
+  database read as "Read database"
+  note right of read
+    Materialized view
+  end note
+  note right of read
+    <s>Elasticsearch</s>
+    <s>Redis</s>
+    <s>Cassandra</s>
+    evitaDB
+  end note
+}
+
+client --> ui
+ui --> command
+ui --> query
+command --> write
+query --> read
+write .right.> read: "Eventual consistency"
+@enduml
+----
+
+evitaDB offers what others don't because it focuses on a smaller segment of the market:
+
+* noSQL DB for JVM optimized for fast reads many times than PostgreSQL and ElasticSearch
+* ACID principles and entity relations
+* variable model for structured and non-structured data
+* REST, GraphQL, gRPC API
+
+=== Run easily
+
+. Download Docker image (160MB in total where 40MB is the engine itself):
++
+[,shell]
+----
+docker pull index.docker.io/evitadb/evitadb:latest
+----
+. Download sample data (70MB):
++
+[,shell]
+----
+wget https://evitadb.io/download/evita-demo-dataset.zip
+unzip -d data evita-demo-dataset.zip
+----
+. Run the database:
++
+[,shell]
+----
+# there is open issue https://github.com/docker/roadmap/issues/238 for Windows / MacOS
+# and you need to open ports manually
+docker run --name evitadb -i -p 5555:5555 -p 5556:5556 -p 5557:5557 \
+       -v "./data:/evita/data" \
+       -e "api.exposedOn=localhost" \
+       index.docker.io/evitadb/evitadb:latest
+----
+. Open the browser and view the data:
++
+[,shell]
+----
+firefox https://localhost:5555/lab
+----
+
+== evitaLab
+
+evitaDB organized data into catalogs (i.e. database schema in relation world) and entity collections (i.e. connected tables in relation world).
+
+=== Data model: Entity
+
+* Entity header: Hierarchy placement and version.
+* Attributes set: Structured global / localized data resembling a table row in RDBMS.
+* Associated data: Non-structured JSON global / localized data.
+* Prices: Structured data (id, priceList, currency, priceWithoutTax, priceWithTax, taxRate, validity, sellable, innerRecordId).
+* Reference: Structured global / localized data, foreign keys and group placement. Relation-specific attributes set.
+
+The entities are immutable and versioned, i. e upon editing entity a new one with higher version is created instead.
+
+=== Schema definition
+
+.Database schema using builder pattern
+[,java]
+----
+evita.updateCatalog(
+    "testCatalog",
+    session ->{ session
+    .defineEntitySchema ("Product")
+.verifySchemaButAllow(
+        EvolutionMode.ADDING_ASSOCIATED_DATA,
+        EvolutionMode.ADDING_REFERENCES
+    )
+    .withoutHierarchy()
+    .withPrice()
+    .withLocale(Locale.ENGLISH, new Locale("cs", "CZ"))
+    .withAttribute("code", String.class, whichIs -> whichIs.unique())
+    .withAttribute("url", String.class, whichIs -> whichIs.unique().localized())
+    .withAttribute("oldEntityUrls", String[].class, whichIs -> whichIs.filterable().localized())
+    .withAttribute("name", String.class, whichIs -> whichIs.filterable().sortable())
+    .withAttribute("ean", String.class, whichIs -> whichIs.filterable())
+    .withAttribute("priority", Long.class, whichIs-> whichIs.sortable())
+    .withAttribute("validity", DateTimeRange.class, whichIs -> whichIs.filterable())
+    .withAttribute("quantity", BigDecimal.class, whichIs -> whichIs.filterable().indexDecimalPlaces(2))
+    .withAttribute("alias", Boolean.class, whichIs -> whichIs.filterable())
+    .withAssociatedData("referencedFiles", ReferencedFileSet.class)
+    .withAssociatedData("labels", Labels.class, whichIs ->w hichIs.localized())
+    .withReferenceToEntity(
+        "categories", "Category", Cardinality.ZERO_OR_MORE,
+        whichIs -> whichIs.indexed()
+                          .withAttribute("categoryPriority", Long.class, thatIs -> thatIs.sortable())
+    .withReferenceToEntity(
+        "brand", "Brand", Cardinality.ZERO_OR_ONE, whichIs -> whichIs.faceted())
+    .withReferenceTo(
+        "stock", "stock", Cardinality.ZERO_OR_MORE, whichIs -> whichIs. faceted())
+    .updateVia(session);
+----
+
+.Database schema using interface
+[,java]
+----
+@Entity(
+    allowedEvolution = {
+        EvolutionMode.ADDING_LOCALES,
+        EvolutionMode.ADDING_CURRENCIES
+}
+public interface Product {
+
+    @PrimaryKey
+    int getId();
+
+    @Attribute
+    @Nonnull
+    String getCode();
+
+    @Attribute(name = "manufacturedBefore", filterable = true)
+    @Nonnull
+    default int[] getYears() {
+    // the default implementation defines default value
+    return new int[] (1978, 2005, 2020);
+
+    @AssociatedData
+    @Nonnull
+    ReferencedFiles getReferencedFiles();
+
+    @ParentEntity
+    int getParentEntity();
+
+    @PriceForSale
+    PriceContract getSelling Price();
+
+    @Reference
+    Brand getMarketingBrand();
+
+    @Reference
+    Brand[] getLicensingBrands();
+
+    record ReferencedFiles(@Nonnull int... fileId) implements Serializable {}
+
+    interface Brand extends Serializable {
+
+        @ReferencedEntity
+        int getBrand();
+
+        @ReferencedEntityGroup
+        int getBrandGroup();
+
+        @Attribute
+        String getMarket();
+    }
+}
+----
+
+The latter way is preferred as there is no requirement for de/serialization.
+The contextual autocomplete helps to learn the domain model.
+
+The database knows its structure and generates REST API or gRPC based on the schema.
+
+== Queries
+
+The goal was to keep the queries consistent among protocols:
+
+.Java query
+[,java]
+----
+query(
+    collection('Product'),
+    filterBy(
+        attributeEquals('status, 'ACTIVE'),
+        attributeGreaterThan('battery-life', 10),
+        or(
+            attributeIs('validity', NULL),
+            attributeInRangeNow('validity')
+        )
+    ),
+    orderBy(
+        attributeNatural('orderedQuantity', DESC)
+    ),
+    require(
+        entityFetch(
+            attributeContentAll()
+        )
+    )
+)
+----
+
+.GraphQL query
+[,graphql]
+----
+query {
+    listProduct(
+        filterBy: {
+        attributeStatusEquals: "ACTIVE"
+        attributeBatteryLifeGreater Than: "10"
+        or: [
+            { attributeValidityIs: NULL },
+            { attributeValidityInRange: "2023-10-28T00:00:00+00:00" }
+        ]
+        orderBy: {
+            attributeOrderedQuantityNatural: DESC
+        }
+    ){
+        primaryKey
+        attributes {
+            code
+            status
+            batteryCapacity
+            batteryLife
+        }
+    }
+}
+----
+
+=== Localization
+
+.Localized attributes are implicitly available in th language as a part of the filter condition:
+[,java]
+----
+query(
+    collection('Product'),
+    filterBy(
+        entityPrimaryKeyInSet(103885, 103911, 105715),
+        entityLocaleEquals('en')
+    ),
+    orderBy(
+        attributeNatural('name', DESC)
+    ),
+    require(
+        entityFetch(
+            attributeContent('name', 'descriptionShort')
+        )
+    )
+)
+----
+
+.Fetching all of them:
+[,java]
+----
+query(
+    collection('Product'),
+    filterBy(
+        entityPrimaryKeyInSet(103885, 103911, 105715),
+    ),
+    require(
+        entityFetch(
+            attributeContent('name', 'descriptionShort')
+            dataInLocales('cs', 'en')
+        )
+    )
+)
+----
+
+=== Entity graph loading
+
+It is an analogy to SQL JOIN clauses with these exceptions:
+
+* It is not needed to specify a binding key - it is always a primary key.
+* There is no problem ONE-TO-MANY cardinality like in the relation database that multiplies data in output.
+
+It is possible to load an entity tree (graph) of referring entities into any depth.
+
+[,java]
+----
+query(
+    collection('Product'),
+    filterBy(
+        entityPrimaryKeyInSet (103885)
+    ),
+    require(
+        entityFetch(
+            referenceContentWithAttributes(
+                'parameterValues',
+                entityFetch(
+                    attributeContent('code'),
+                    referenceContentWithAttributes(
+                        'parameter',
+                        entityFetch(
+                            attributeContent('code')
+                        )
+                    )
+                )
+            )
+        )
+    )
+)
+----
+
+Lazy-loaded is partly supported, planned but not given a priority as it brings another set of performance problems.
+The recommended approach is to know what we really need.
+
+The entities in the tree can be further filtered and ordered.
+
+[,java]
+----
+query(
+    collection('Product'),
+    filterBy(
+        entityPrimaryKeyInSet(103885)
+    ),
+    require(
+        entityFetch(
+            referenceContentWithAttributes(
+                'parameterValues',
+                filterBy(
+                    entityHaving(
+                        referenceHaving(
+                            'parameter',
+                            entityHaving(
+                                attributeContains('code', 'r')
+                            )
+                        )
+                    )
+                ),
+                orderBy(
+                    entityProperty(
+                        attributeNatural('code', DESC)
+                    )
+                ),
+                entityFetch(
+                    attributeContent('code'),
+                    referenceContentWithAttributes(
+                        'parameter',
+                        entityFetch(
+                            attributeContent('code')
+                        )
+                    )
+                )
+            )
+        )
+    )
+)
+----
+
+[,graphql]
+----
+query{
+    getProduct (primaryKey: 103885) {
+        primaryKey
+        attributes { code }
+        parameterValues(
+            filterBy: {
+                entityHaving: {
+                    referenceParameterHaving: {
+                        entityHaving: {
+                            attributeCodeContains: "r"
+                        }
+                    }
+                }
+            }
+            orderBy: {
+                entityProperty: {
+                    attributeCodeNatural: DESC
+                }
+            }
+        ) {
+            referencedEntity {
+                primaryKey
+                attributes { code }
+                parameter {
+                    referencedEntity {
+                        primaryKey
+                        attributes { code }
+                    }
+                }
+            }
+        }
+    }
+}
+----
+
+=== Parametrized queries (facets)
+
+It enables to select a range of attribute values to find out what products make sense to the customer.
+Numbers in the brackets simplify navigation and prevent from excessively narrowing the range.
+Standard parameter values combinations are:
+
+* OR within the same group
+* AND across the groups
+* ... and exceptions
+
+The parameters can be both checkboxes and radio buttons.
+Facets can be at the reference level in evitaDB.
+
+A good e-shot does not let you go into the dead-end, and has a solid parameterized search: There are huge number of combinations but only few make sense.
+
+The process should navigate you.
+
+[,java]
+----
+query(
+    collection('Product'),
+    filterBy(
+        attributeEquals('status', 'ACTIVE'),
+        userFilter(
+            facetHaving(
+                'groups',
+                entityHaving(
+                    attributeEquals('code', 'sale')
+                )
+            )
+        )
+    ),
+    require(
+        facetSummary(
+            COUNTS,
+            entityFetch(
+                attributeContent('code')
+            ),
+            entityGroupFetch(
+                attributeContent('code')
+            )
+        )
+    )
+)
+----
+
+A single query not only eliminates a need for round trips and the context is kept together for optimized search where intermediate results can be reused. In contrary using multiple queries breaks such a search context.
+
+=== Hierarchy structure
+
+Menu types:
+
+* Mega menu.
+* Highly dynamic collapsible menu.
+* Simple breakdown of the nearest subcategories.
+* Menu with path to the actual category.
+
+Further features:
+
+* An option to exclude empty categories.
+* (Transitively) count the items in the categories.
+* Subcategories count.
+* Subtree exclusion based on the expression / condition (for example private directory, Christmas, etc.).
+
+[,java]
+----
+query(
+    collection('Product'),
+        filterBy(
+            hierarchyWithin(
+                'categories',
+                attributeEquals('code', 'audio'),
+                excluding (
+                    attributeEquals('code', 'wireless-headphones')
+                )
+            )
+        ),
+        require(
+            hierarchyOfReference(
+                'categories',
+                parents(
+                    'parentsWithTheirSiblings',
+                    entityFetch(attributeContent('code')),
+                    siblings(
+                        entityFetch(attributeContent('code'))
+                    )
+                ),
+                fromRoot(
+                    'roots',
+                    entityFetch (attributeContent('code')),
+                    stopAt(level(1)),
+                    statistics (CHILDREN_COUNT, QUERIED_ENTITY_COUNT)
+                )
+            )
+        )
+    )
+)
+----
+
+=== Finding selling price
+
+The database supports different prices for different customers.
+
+* B2C prices - simple solution:
+** Strikethrough price (selected prices are not subject of further calculations).
+** Multi-currency support.
+** Price validity and configuration varies in certain and multiple time ranges.
+** Elimination of items with no price
+* B2B prices
+** Price with and without VAT.
+** Price list prioritization.
+* Sorting by dynamically calculated prices.
+* Aggregated prices:
+** Master / variants (a single variant price, for example a t-shirt with different sizes and colors, i.e. a relation database would suffer doing `GROUP BY` over millions of rows).
+** Products sets (sum of price of the set)
+
+The implementation has prices as first-class citizen at the entity levels so the whole model is pre-optimized for these use cases.
+
+[,java]
+----
+query(
+    collection('Product'),
+    filterBy(
+        entityPrimaryKeyInSet(113010),
+        priceValidInNow(),
+        priceInPricelists('employee-basic-price', 'basic'),
+        priceInCurrency ('CZK')
+    ),
+    orderBy(
+        priceNatural(ASC)
+    ),
+    require(
+        entityFetch(
+            attributeContent('code'),
+            priceContentRespectingFilter('reference')
+        )
+    )
+)
+----
+
+=== Histograms
+
+Histograms are appropriate of representing interval values, i.e. high-cardinality values.
+
+Possible use cases for:
+
+* Selling price
+* Attributes
+* Facets
+
+They suggest the user in what interval there are the most items available.
+The argument is a number of "columns" of the histogram that is optimal for FE rendering.
+
+[,java]
+----
+query(
+    collection('Product'),
+    filterBy(
+        priceValidInNow(),
+        priceInPricelists('basic'),
+        priceInCurrency('EUR'),
+        userFilter(
+            priceBetween(100, 2000),
+            attributeBetween(
+                'battery-capacity', 2000, 3000
+            )
+        )
+    ),
+    require(
+        priceHistogram(10),
+        attributeHistogram (10, 'battery-capacity')
+    )
+)
+----
+
+== Java API
+
+=== Remote evitaDB
+
+It is possible to start up evitaDB as a Java application with exposed gRPC interface and a client connecting to the database.
+The communication is done via link:https://grpc.io[gRPC protocol].
+
+For example, it is possible to connect to evitaDB running in Docker as a remote process.
+
+
+[,java]
+----
+var evita = new EvitaClient(
+    EvitaClientConfiguration.builder()
+            .host("localhost")
+            .port(5566)
+            .build());
+----
+
+=== Embedded evitaDB
+
+The database can run in-memory.
+While this solution has no overhead of gRPC calls, it stores indices for search (not data themselves) for the sake of performance which takes a lot of RAM and if we need memory dump, we hardly find what we need as in-memory evitaDB would take 90% of the memory.
+
+[,java]
+----
+final Evita evita = new Evita (
+    EvitaConfiguration
+        .builder()
+        .build()
+);
+
+final ExternalApiServer externalApiServer = ExternalApiServer(
+    evita,
+    ApiOptions.builder()
+            .enable(GrpcProvider.CODE)
+            .enable(SystemProvider.CODE)
+            .build());
+
+// open the API on configured ports
+externalApiServer..start();
+
+//close the server and the ports, then close evitaDB itself
+Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+    externalApiServer.close();
+    evita.close();
+}));
+----
+
+This solution is optimal for integration tests and also optimized for parallel tests run.
+
+=== Example test run
+
+Tests result (normally they run under one minute):
+[,yaml]
+----
+Tests finished in: 1m 10s
+Evita statistics:
+    - instances created: 153
+    - simultaneous instances peak: 11
+    - entities created: 15264
+    - ports opened: 80
+    - simultaneously opened ports: 15
+----
+
+NOTE: The video from the tests run contained most likely link:https://www.jetbrains.com/help/idea/cpu-and-memory-live-charts.html[CPU and Memory live charts] in IntelliJ Idea.
+
+== License
+
+Open-source friendly though not fully open-source license: link:https://www.hashicorp.com/bsl[Business Source License, Version 1.1].
+
+The license causes the code older than 4 years becomes licensed under link:https://www.apache.org/licenses/LICENSE-2.0[Apache License, Version 2.0].
+
+=== Allowed
+
+* Commercial and non-commercial usage.
+* Distribution as a part of the application.
+* Code adjustments and improvements with no need for publishing.
+* Authors give up on patent rights.
+
+=== Requires
+
+* Retaining the license texts.
+* Retaining the copyright texts in headers.
+
+=== Forbids
+
+* Selling subscriptions.
+
+== Links
+
+* GitHub: https://github.com/FqForrest/evitaDB
+* Docker Hub: https://hub.docker.com/r/evitadb/evitadb: `index.docker.io/evitadb/evitadb:latest`
+* Maven: https://central.sonatype.com/artifact/io.evitadb/evita_db/0.8.ALPHA
++
+[,xml]
+----
+<dependency>
+    <groupId>io.evitadb</groupId>
+    <artifactId>evita_db</artifactId>
+    <version>0.9. ALPHA</version>
+    <type>pom</type>
+</dependency>
+----
+* Homepage: https://evitadb.io
+* Discord: https://bit.ly/evitaDB
+
+WARNING: The project is still in the EA (early access) mode, that's why it is `ALPHA`.
+

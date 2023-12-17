@@ -179,4 +179,3 @@ Types of profiles: Stack profiling, Linux performance profiling (for L1 cache), 
 * Be careful with formulating and summarizing the results. It's worth consulting with a colleague, reviewing the test, and involving more people.
 * Observe the changes in time and use the CI/CD pipeline for the performance tests.
 
-include::partial$session-impression.adoc[]

@@ -1,0 +1,199 @@
+= Touch the AI: integration of AI to the business environment?
+
+:original: Šáhni si na AI: integrace umělé inteligence do firemního prostředí?
+:author: Martin Krček
+:length: 51:56
+:date: 13-11-2023
+:language: Czech 🇨🇿
+:quote: "In the beginning was the Word" John 1:1
+:quote2: "But I think in the future, perhaps the real pictures will signed by blockchain or anything else proving that it was created by human."
+
+:rating: 3
+:quote: The goal of OpenAI is a friendly AI to make the word better and support creativity: "Give me a sad story" - the story will be sad but ends nicely.
+:pros: Introduced a new perspective of AI capabilities and use-cases, especially from the business point of view.
+:cons: I dont want to buy ChatGPT app fo 25 USD.
+:cons2: Buy Teams for 6 USD a month for automatizing MS Teams (summary of meetings, etc..).
+:cons3: The woldwide economical and ecological impact was not mentioned.
+
+include::partial$session.adoc[]
+
+== Conversation tree
+
+Technologies for conversations:
+
+* IBM Watson
+* MS Composer
+* Google Dialogflow
+    Can be conected to Slack or Messenger
+
+*Benefits*
+====
+* Speed
+* Clarity
+* Secure answers
+====
+
+*Challenges*
+====
+* Flow diagram
+* Unknown intents
+* Huge scope (conversation design) + NLU + time to develop
+* Localisation (including broken language)
+====
+
+*What business wants?*
+====
+* More dialogs
+* More smalltalk
+* More intents, trainings, entities
+====
+
+== Generative AI
+Mantra: understand, read, write, count, draw, now can see
+
+=== Brief history
+
+* 1966 Eliza
+* Late 1980/1990s Statistical Language Models
+* 2000s Neural Probabilistic Language Model
+* 2017 Transformer Models and Attention Mechanisms
+* 2018 BERT
+* 2019 GPT-2 and T5
+* 2020 GPT-3
+* 2021-2022 LaMBDA, xlarge, Chinchilla, CodeGen, InCoder, mGPT, PaLM, OPT-IML, Minerva
+* Nov 2022 ChatGPT
+* Dec 2022 GPT 3.5
+* Feb 2023 Google Bard and LLaMa
+* Mar 2023 GPT-4
+* Apr 2023 BloombergGPT, StableLM, Dolly 2.0, Titan, BingChat
+* May 2023 PaLM2
+
+Cosine similarity - things are converted to vectors and compared (for similarity)
+
+=== OpenAI
+
+* The goal of OpenAI is a friendly AI to make the word better and support creativity.
+* "Give me a sad story" - the story will be sad but ends nicely.
+* Training data: Huge language models created by people: Common Crawl, Wikipedia, WebText2, Book1 and Book2.
+* GPT = Generative Pre-trained transformer.
+* Limited knowledge of internet to June 2021.
+* No longer open (no sources available anymore).
+
+=== Gen AI tools
+
+* link:https://chat.openai.com[]
+* link:https://perplexity.ai[]
+** built on top of ChatGPT
+** it can nicely show resources of where the information was used for
+* link:https://bard.google.com[]
+** It was scared of Europe but can speak Czech now
+
+== Top 5 activities for developers
+
+* Write
+** blog article about AI generation
+** self yearly evaluation
+* summary about the conference
+* Conversations
+* Summary
+* Brainstorming
+** I want to increase my salary ideas
+* Write emails
+* Programming
+** Translate from JS to Java or C#
+** Describe what the code does
+** Code interpreter: Generates Python code to read attached Excel and analyses it (describes and draws data)
+* See: Describe a photo
+* Integration: Find my insurance contract, find my scheduled meeting from Gmail
+
+== How to implement into business
+
+* Can no longer give information to ChatGPT
+** Personal ID (email, phone, photo...)
+** IP address, Browser, OS, Device
+** Prompt and content
+** All conversations including history
+** Trainings on my content
+** GDPR
+** Data storage and processing in the EU
+
+Consumers and enterprises have different needs:
+
+* Consumers (Bard + MakerSuite):
+** Plan a 30day trip to Patagonia
+** Create a valentine poem
+** How to make GF pancakes?
+** Create a jazz song for a bday card
+* Enterprises (Vertex AI + Duet AI):
+** How do we control OUR data
+** How do we deal with fraud and security
+** How will we control costs
+** We need to be accurate and explainable
+** How do we integrate our existing data and applications
+
+Gen AI tools + API:
+
+* Google : cloud.google.com/vertex-ai
+* Microsoft: oai.azure.com
+* OpenAI: platform.openai.com/playground (private training playground)
+
+API:
+
+* Measuring temperature (exactness vs creativity)
+* The `completionTokens`, `promptTokens` and `totalToken` are returned to estimate the calculation costs.
+
+=== Use cases:
+* Marketing
+** Content generator, product description (name, short, long)
+** Sentiment Analysis: From ChatBot, comments, social media appstores (traffic light + suggestion)
+* Search
+** Search on INTERNAL documents, sheets, PDF, images
+** Developer documentation on Confluence pages
+** Internal system - whisper in customer center
+** QnA
+** Preparation:
+*** Prepare documents
+*** What to do when we have 2+ pages
+*** Embedding documents
+*** Save embedding to vector DB
+*** Local, Postgres, AirTable..
+** Answering:
+*** Get question from user
+*** Embedding the question
+*** Search in Vector DB (using cosine similarity)
+*** Get document
+*** Create AI query to LLM (get answer from the document)
+*** Send answer and link to document to the user
+** Opportunity:
++
+> Manager: "No need embedded, Microsoft can select a folder/storage for cognitive search (Azure Cognitive Search) "
++
+> Me: "Ok, it is a good way, it will cost 30k USD a month but I can do cheaper"
+
+* ChatBot and Voice
+** HR ChatBot (how many vacation days do I still have)
+** Internal Support Bot
+** Public Support
+** Integrations:
+*** Phone: AudioCodes, Avaya, Twilio, Voximplant
+*** Dialogflow: Dialog CX, Phone Gateway, Dialogflow, Messenger, Messenger from Facebook, LINE
+*** Open source: Google Chat, Azure Bot Service, Microsoft Teams, Discord, ServiceNow, Slack, Spark, Telegram, Twilio, Twitter, Viber
+*** Independent integrations: Diagflow API
+
+== Gen AI
+* Benefits: Fast and easy to learn, local knowledge, always answers, localisation and data sources
+* Challenges: Testing (always different answer), speed, content security, can I trust?
+
+== Automation
+* jaRobot.cz: articles written and published by AI
+** sometimes too productive
+** context-sensitive (speaking in Czech triggers describing Prague for a trip ideas)
+
+== How to start
+* ASK people what they want (customer support, marketing, HR)
+* SHARE knowledge (AI coffee, virtual regular calls either local or global)
+* start WORKING (start to code, MVP, PoC, Hackaton and workshops)
+* Do not give up
+
+== QaA
+* Author rights: EU wants to accompany AI image with a text that the image is fake. But I think in the future, perhaps the real pictures will signed by blockchain or anything else proving that it was created by human.

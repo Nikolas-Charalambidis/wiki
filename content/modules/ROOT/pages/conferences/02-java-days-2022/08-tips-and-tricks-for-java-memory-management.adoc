@@ -105,4 +105,3 @@ The biggest issue is that the application can become iresponsive before OutOfMem
 * A large number of hash-based structures (HashMap and HashSet) is also not a good idea and a plain array can be a better choice.
 * VisualVM is a nice tool but favors smaller Heap sized.
 
-include::partial$session-impression.adoc[]

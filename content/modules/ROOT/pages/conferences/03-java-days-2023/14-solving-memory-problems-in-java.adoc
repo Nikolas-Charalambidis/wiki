@@ -1,0 +1,132 @@
+= Solving memory problems in Java
+
+:original: Řešení problémů s pamětí v Javě
+:author: Petr Adámek
+:length: 1:04:58
+:date: 16-11-2023
+:language: Czech 🇨🇿
+:quote: Rule 1: Don't do it. Rule 2 (for experts only): Don't do it yet - that is, not until you have a perfectly clear and unoptimized solution. - M. A. Jackson (1975)
+:quote2: We should forget about small efficiencies, say about 97% of the time: premature optimization is the root of all evil. - Donald E. Knuth (1974)
+:quote3: More computing sins are commited in the name of efficiency (without necessarily achieving it) than for any other single reason - including blind stupidity. - William A. Wulf (1972)
+
+:rating: 4
+:pros: A spot on examples surprisingly revealing that using `HashMap` for the sake of optimization is not always a way to go.
+:cons: I found the format and arrangement of the slides a bit confusing.
+
+include::partial$session.adoc[]
+
+The speaker had a session in the previous year about link:../02-java-days-2022/08-tips-and-tricks-for-java-memory-management.adoc[Tips and tricks for Java memory management].
+
+== Memory dump
+
+Problems with memory in Java:
+
+* High memory consumption (memory optimization) - the higher heap, the longer and more often GC runs which slows down the whole JVM
+* Memory leaks - it is really possible to create easily a memory leak
+* Memory protection violation (segmentation fault)
+
+== Profiler
+
+=== Sampling
+
+* State is checked/recorded in regular intervals
+* Low accuracy - it can miss an important event between the intervals
+* low overhead
+
+=== Profiling
+
+* Code is instrumented to record important events - the code is instrumented (code is completed with instructions that record operations)
+* High accuracy - no operation is missed as the code is instrumented
+* High overhead
+
+== Problems
+
+=== High memory consumption & memory leaks (Real life story)
+
+Why we need profiler (or other tools) before optimization.
+
+==== Requirements
+
+* Recognizing addresses based on catalogs from the user-input text (irregular dots, commas, numbers, order, typos, etc.)
+* DDL library, though programmers had no/minimal experience with C and were spoiled by Java -
+* Performance (non-functional requirement) to recognize an address in 20ms (2013 were 2.7 million of addresses by the ministry of interior)
+
+==== Solution
+
+* the result was a DLL library in Java, i.e. C called JVM via JNI (it is possible to call Java code via C or C via Java code) -> It was a horrible idea, performance-wise
+* The huge catalogs had to be kept in memory otherwise the repeated connections to the DB would slow down the calculation and it would take over 20ms
+** It was not possible to use heap larger than 0.5 GB, because it was a process run from DLL so there was no way to increase the heap
+** the first implementation (3 weeks of work) required 6 GB of memory -> time for optimization
+
+==== Optimization
+
+* After 2 days of optimization (all possible found in the code) the memory requirement were reduced by mere 50 MB (so 5.95 GB in total which is far from the goal)
+* Time for the profiler: The problem was found and the 10mins quick-fix was found, the application resulted in 300 MB (2 days wasted in favor of 10 minutes) -> We need tools for it
+
+==== Tools
+
+It is not optimal to see real-time analysis as it changes rapidly so snapshot is a better idea. The goal is to find the memory allocation in what threads, in what parts of code it happens, etc.
+
+Memory dump:
+`jmap -dump:[live],format=b,file=<file-path> <pid>`
+`jcmd <pid> GC.heap_dump <file-path>
+JVisualVM
+`java -XX:+HeapDumpOnOutOfMemoryError` - the application automatically makes a memory dump on such an error (the old Java versions struggled to do it as more aggressively ran the GC and the JVM was not able to do it)
+
+==== Analysis
+
+* JVisual VM (https://visualvm.github.io/)
+* Eclipse Memory Analyzer (MAT) (https://projects.eclipse.org/projects/tools.mat) ** One of the best tools nowadays.
+
+== Practical example: Address Database (simplified real-time scenario)
+
+* Loads list of addresses in the Czech Republic (`DataLoader`)
+* Finds all addresses matching (possibly incomplete) given specification (`AddressFinder`)
+** `SimpleAddressFinder` stores data as simple `List` (2.7 million), no optimized structure.
+*** Search is done sequentially, all addresses must be traversed (brute force)
+*** Multiple search strategies: `ForEachSearchStrategy` (for-each loop), `StreamSearchStrategy` (Stream API), `ParallelStreamSearchStrategy` (Stream API, parallel based on fork-join framework, the thread count corresponds to CPU count)
+** `IndexedAddressFinder` stores data in map-based structure and the search process consists of two steps: Finding the collection of addresses with appropriate `AddressBase` (municipality, municipality district, street, and district - everything without numbers), *then* finding addresses within this collection with appropriate orientation number and/or house number.
+*** The first step is implemented as a map lookup to avoid sequential search.
+*** Multiple implementations for the 2nd step: `IndexedAddressGroup` (addresses with the same `AddressBase` are stored in `Map`, find by number(s) is done as a map look-up), `SimpleAddressGroup` (addresses with the same `AddressBase` are stored in simple `List`, find by number(s) is done sequentially)
+* Executes performance test to help evaluate CPU and Memory consumption (`PerformanceTest`)
+* There are multiple implementations of `AddressFinder` using various data structures and search algorithms
+* Concrete implementation is selected with dialog box when the application starts
+
+=== Demo:
+
+JVisualVM's statistics during first run of `SimpleAddressFinder`.
+
+* Memory:
+** `SimpleAddress` (the actual address instance): 129 MB, 2 707 265 live instances (not changing)
+** `int[]`: 34 MB, 33 000 (and increasing) live objects
+** `java.lang.Object[]`: 33 MB, 134 000 (and increasing) live objects
+** `java.lang.Integer`: 24 MB, 1 533 000 (and increasing) live instances
+** `byte[]`: 23 MB, 770 000 (and increasing) live objects - as long as the Java 17 was used, are String contents (Strings are optimized as of Java 9: 2 String implementations: `byte[]` is ASCII only, `char[]` is the rest).
+** `java.lang.String`: 17 MB, 744 000 (and increasing) live instances
+
+Eclipse Memory Analyze can offer for memory dump to focus on: Leak Suspects Reports, Component Report or Re-open previously run reports.
+
+The list with the `List` addresses were found in the application. This is displayed as `Object[]` as this is how the `List` is stored in the JVM.
+
+=== Core problem
+
+Everything was saved into maps to use the O(n) advantage. However, there are no more than tens of addresses in a streets which does not make sense to create a `Map` for it and a sequential run is the best. The problem of `HashMap` and `HashSet` have quite a lot of memory print (each object with no attributes in such a structure requires `30 bytes` which adds up).
+
+The most optimized solution is using `IndexedAddressFinder` and `SimpleAddressGroup`.
+
+== Common problems
+
+=== Memory dump size
+
+* The common problem is a size of memory. Memory dump is big and with big heap, it cannot be fit into memory.
+* Solution:
+** Enough memory in DEV stations
+** Stream analysis
+** Keep the heap small - containers can keep the heap small, so containerization is worth over WebLogic that runs usually on around 64 GB heap
+
+=== Memory protection violation (segmentation fault)
+
+* Java has no pointer arithmetic, therefore it should theoretically never happen, *however*: there can be a bug in JBM, and it can happen in native code (Java Core API, libraries, our native code)
+* Prevention: Avoid native libraries if possible and use them in isolated containers
+* Analysis: Segmentation fault report, core dump (can be open with GDB)
+* Poonam Parhar (Oracle): link:https://poonamparhar.github.io/troubleshooting_native_memory_leaks[Troubleshooting Native Memory Leaks in Java Applications]

@@ -1,0 +1,284 @@
+= Is the access to your API under control?
+
+:original: Máte pod kontrolou prístup na vaše API?
+:author: Ivan Macalák
+:length: 55:07
+:date: 13-11-2023
+:language: Slovak 🇸🇰
+
+:rating: 4
+:pros: Keycloak and the whole 2nd part that was a pure practice.
+:cons: Not different information about OAuth 2.0 in the first half.
+:cons2: Not for dummies but rather copied from other sites.
+
+include::partial$session.adoc[]
+
+APIs are everywhere, modern applications are based on APIs (Mobile, Web, IoT, Backend-to-backend), so it is a magnet for attackers and is a possible security risk.
+
+Risks:
+
+* Sensitive data can be exposed to unauthorized person.
+* Stolen money from bank account.
+*Complete airplane booked (then canceled to lower price).
+* Attach can cause serious damage (IoT).
+* DDoS attacks ruins our business which cannot offer services anymore
+* We can have higher costs for cloud (or other paid) services, for example mailing service
+
+== Basic concepts
+
+*Identity*: Each user has a visible identity which is a set of contextual attributes:
+
+* Person: name, email, phone, picture
+** This can also change by context: Work identity (name, employee number, department), Social network identity (name, email, avatar), Game identity (name, nickname, rank)
+* Device: ID, IP address, model, version
+* Application
+* Component
+
+*Authentication* defines *who* you are. For example a citizen of EU based on the ID card or passport matching your biometry.
+
+*Authorization* defines *what* rights you have. For example, members of the EU countries can enter the EU with no limit, though most of the countries need visa = *claim*.
+
+*Access Policy Enforcement* is a verification policy, for example checking the visa authenticity and expiration.
+
+*Authority* issues and verifies tokens, and user identity, and guarantees the information in the tokens are valid.
+
+== Centralized IAM (Identity Management)
+
+If a system provides multiple application where each requires an access, it is not convenient to require the user to register into each one -> This resolves SSO, but the API gateway needs to verify tokens across the *n* applications -> Centralized IAM that all applications integrate to, including the API Gateway.
+
+* User has one set of login credentials improving the user experience
+* SSO is relative easy to implement via centralized ADM
+* Central point assures consistency of the identity-related data
+* Integration to external providers
+* Single point of failure, so it has to be secured
+
+=== OAuth 2.0
+
+Standardized IAM solution created for delegated *Authorization* scenarios, follows the IETF standard and defines authorization flows.
+It enables an application to obtain authorization to call APIs:
+
+* Application can obtain User's consent to call APIs on User's behalf.
+* Application can obtain authorization to call APIs on its own behalf.
+
+It *does not* deal with identities themselves and *is not* an authentication protocol -> Open ID Connect solves it.
+
+.OAuth 2.0 schema
+[,adoc]
+[plantuml,ab-partial-all-1,svg]
+----
+@startuml
+left to right direction
+'top to bottom direction
+
+person person as "Resource Owner"
+note left
+  Owns data: Invoices
+end note
+
+component clientApplication as "<size:40><&globe>\n\nClient Application"
+note left
+  Owns data: Accesses owner's data
+end note
+
+component resourceServer as "<size:40><&folder>\n\nResourceServer"
+note left
+  Owns data: Stores data and provides API
+end note
+
+component authorizationServer as "<size:40><&key>\n\nAuthorization Server"
+note right
+  Owns data: Authorizes client to access owner's data
+end note
+
+person -right-> clientApplication
+clientApplication -right-> resourceServer
+clientApplication -right-> authorizationServer
+person --> authorizationServer
+@enduml
+----
+
+.OAuth 2.0 flow
+[,adoc]
+[plantuml,ab-partial-all-1,svg]
+----
+@startuml
+actor person as "Resource Owner"
+participant authorizationServer as "<size:40><&key>\n\nAuthorization Server"
+participant clientApplication as "<size:40><&globe>\n\nClient Application"
+participant resourceServer as "<size:40><&folder>\n\nResourceServer"
+
+person -> authorizationServer: User Authorization request
+person -> authorizationServer: User Authenticates and optionally grant access
+authorizationServer -> clientApplication: Authorization code grant
+clientApplication -> authorizationServer: Access Token request with authorization code grant
+authorizationServer -> clientApplication: Access Token / Refresh Token
+clientApplication -> resourceServer: Access Resource using API
+@enduml
+----
+
+=== Open ID Connect
+
+It provides an identity service layer on top of OAuth 2.0 as a federated *Authentication* protocol that allows user to reuse their accounts and can integrate multiple identity providers.
+It allows auth server to authenticate user for applications in a standard way and enables an application to delegate user authentication to OAuth 2.0 auth server.
+It supports SSO.
+
+Open ID Connect is a successor to SAML.
+
+- Relying on party = OAuth 2.0 Client (client application which requests claims about user
+- Open ID Provider = OAuth 2.0 Authorization server (authorization as a service: issues identity tokens)
+
+=== Tokens
+
+*Access Token* is a token used by an application to access an API.
+It represents the application's authorization to call an API and has an expiration.
+
+*Refresh Token* is an optional token that can be used bu an application to request a new access token when a prior access token has expired.
+
+*Authentication Code* is an intermediary, opaque code returned to the application and used to obtain an access token and optionally refresh token. Each authorization code is used once.
+
+*Json Web Tokens (JWT)* is a JSON structure  which encodes claims, where claim is value asserted about subject. The structure is `{header}.{payload}.{signature}` and the standard registered claims are:
+
+* `jti` - token identifier
+* `iss` - token issuer (issuer)
+* `sub` - token principal identification (subject)
+* `aud` - recipients of a token (audience)
+* `exp` - token expiration time
+
+=== Keycloak
+
+It is the open source customizable and extendable IAM solution and authorization server.
+It supports the latest standard protocols with fine-grained authorization capabilities.
+
+* User authentication (SSO support)
+* OpenID/SAML 2.0 identity provider
+* High availability, scalability, multi-tenancy support
+* Identity brokering and social login
+* User federation support (LDAP, AD, Kerberos, ...)
+
+Alternatives:
+
+* Auth0
+* Curity
+* Amazon IAS
+
+== Spring Security
+
+Spring security provides modules to support OAuth 2.0, Open ID Connect, and JWT.
+
+Postman serves as an API client.
+
+=== Keycloak
+
+Keycloak can define realms that serve as sandboxes.
+
+*Client* defines a client with parameters, such as URLs and Authentication flow from the OAuth 2.0 protocol point of view:
+
+** *Standard flow* is the most secure and most used
+** *Implicit flow* is not as secured as the standard flow
+** *Direct access grants* makes the authorization server to grant the access token directly.
+Each client also has own *Client Secret* for communication with Keycloak.
+
+In a simple case, it is needed to register Postman (Root and Home URLs are `localhost:8080`).
+
+=== API implementation
+
+.`build.gradle`
+[,groovy]
+----
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+}
+----
+
+.`SecurityConfig.java`
+[,java]
+----
+@EnableWebSecurity
+@EnableMethodSecurity
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.authorizeHttpRequests(authorize -> authorize
+            // Authorize using matchers
+            //.requestMatchers("/api/*").hasAuthority("ROLE_USER")
+            //.requestMatchers("/api/*").hasRole("ROLE_ADMIN")
+            .anyRequest().authenticated())
+        // Spring by default cannot decode roles from Keycloak
+        .oauth2ResourceServer(oauth2 -> oauth2
+            .jwt(jwt -> jwt.jwtAuthenticationConverter(new KeycloakJwtAuthenticationConverter()))
+        );
+        return http.build();
+    }
+}
+----
+
+Either use matchers above or declarative authorization below:
+
+.`ApiController.java`
+[,java]
+----
+@GetMapping(path = "/hello")
+@PreAuthorize("hasRole('ROLE_USER') or 'hasRole('ROLE_ADMIN')")
+public String helloWorld() { .. }
+
+@GetMapping(path = "/admin/hello")
+@PreAuthorize("'hasRole('ROLE_ADMIN')")
+public String adminHelloWorld() { .. }
+----
+
+It is needed to show Spring where is Keycloak server.
+Spring automatically uses its public key.
+
+.`application.properties`
+[,properties]
+----
+spring.security.oauth2.resourceserver.jwt.issuer-uri=http://localhost:8090/realms/javadays
+debug=true
+----
+
+On top of that, Spring Security provides the following:
+
+* Access Token validation
+* Token Claims mapping
+* Declarative Access Control
+
+=== API call
+
+Postman OAuth 2.0 authorization:
+
+* Token Name - any token name
+* Grant type - Authorization Code
+* Callback URL - `http://localhost:8080` (unused in this case)
+* Authorize using browser - false
+* Auth URL - `http://localhost:8080/realms/javadays/protocol/openid-connect/auth` (Keycloak, authentication server)
+* Access Token URL - `http://localhost:8080/realms/javadays/protocol/openid-connect/token` (Keycloak, token issuer)
+* Client ID - `postman` as registered in Keycloak
+* Client secret - Generated for client ID in Keycloak
+* Scope - profile email openid (Keycloak will insert `id_token` into the access token with the authentication information as a proof of identity)
+* State - null
+* Client Authentication - Send client credentials in body
+
+Only the authorization server can ask the password, not the application itself.
+
+Upon requesting "Get New Access Token", Postman gets redirected to Keycloak login page.
+
+=== Open Policy Agent
+
+It is a policy-based control for cloud native environments.
+Read more at the link:https://www.openpolicyagent.org/integrations/springsecurity-api[website].
+
+== Conclusion
+
+Implement proper authentication and authorization using standards and best practices:
+
+* OAuth 2.0 and Open ID Connect
+* JWT
+* Encryption
+* Opaque Tokens
+* API design
+* Do not implement what is available (products, frameworks, ...)
+* Include security tests and monitor the system
+
+Follow link:https://owasp.org/API-Security/editions/2023/en/0x11-t10[OWASP Top 10 API Security Risks – 2023].

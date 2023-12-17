@@ -91,5 +91,3 @@ It is not easy to rename columns or tables and it must happen in multiple steps 
 
 === Error handling
 There is no sophisticated error handling required as no retries are implemented, the record just fails. If a problem persists for a longer time, it's worth taking a look at it.
-
-include::partial$session-impression.adoc[]

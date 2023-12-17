@@ -26,5 +26,10 @@ ui:
 asciidoc:
   attributes:
     source-highlighter: 'coderay'
+    example-caption: ''
+    figure-caption: ''
+    listing-caption: ''
+    table-caption: ''
+    video-caption: ''
   extensions:
     - asciidoctor-kroki

@@ -133,5 +133,3 @@ project/
 * Where is the boundary between Domain Driven Design and technical design?
 +
 > There are no exact boundaries.
-
-include::partial$session-impression.adoc[]
