@@ -1,0 +1,29 @@
+= Postman
+
+== Authorization
+
+:label: Decode JWT
+:date: 07-12-2023
+:source: link:https://medium.com/@jeff.heienickle/how-to-decode-a-json-web-token-in-postman-5312b3434462[Medium] + link:https://stackoverflow.com/q/65284184/3764965[StackOverflow]
+include::partial$item.adoc[]
+
+[,groovy]
+----
+var authorization = pm.environment.get("authorization");
+
+function parseJwt (token,part) {
+   var base64Url = token.split('.')[part];
+   var words = CryptoJS.enc.Base64.parse(base64Url);
+   var jsonPayload = CryptoJS.enc.Utf8.stringify(words);
+   return  JSON.parse(jsonPayload);
+};
+
+var jwt = {};
+jwt.size = authorization.length;
+jwt.header = parseJwt(authorization, 0);
+jwt.payload = parseJwt(authorization, 1);
+jwt.signature = authorization.split('.')[2];
+jwt.expires = ((jwt.payload.exp-Date.now().valueOf()/1000)/60).toFixed(1);
+
+var name = jwt.payload["name"];
+----

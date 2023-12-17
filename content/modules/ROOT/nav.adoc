@@ -58,6 +58,7 @@
 * xref:mac/mac.adoc[]
 * xref:maven/maven.adoc[]
 * xref:postgresql/postgresql.adoc[]
+* xref:postman/postman.adoc[]
 * xref:soap-ui/soap-ui.adoc[]
 * xref:seo/seo.adoc[]
 * xref:spring/spring.adoc[]
