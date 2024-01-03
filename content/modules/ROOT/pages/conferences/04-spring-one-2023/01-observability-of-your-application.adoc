@@ -1,0 +1,147 @@
+= How To Be a Java Automated Testing Superstar
+
+:link: https://springone.io/2021/sessions/how-to-be-a-java-automated-testing-superstar
+:author: Jonatan Ivanov as Staff Engineer, VMware
+:author2: Tommy Ludwig as Software Engineer, VMware
+:author3: Marcin Grzejszczak as Staff Software Engineer, VMware
+:length: 28:15
+:date: 17-12-2023
+:language: English 🇺🇸
+:track: Essentials
+:quote: The dashboard confirms that it is not just a one-off error, and we can see that it is happening to multiple users.
+:quote2: Hold your horses 🐴 - Marcin Grzejszczak
+
+:rating: 4
+:pros: Beginner friendly introduction to Micrometer and Observability API.
+:cons: Exemplars was first mentioned but never explained.
+:cons2: Prometheus and Grafana set-ups should be presented.
+
+include::partial$session.adoc[]
+
+== Architecture
+
+[plantuml,ab-partial-all-1,svg]
+----
+@startuml
+left to right direction
+'top to bottom direction
+
+component teaService as "Tea Service"
+component tealeafService as "Tealeaf Service"
+component waterService as "Water Service"
+database tealeafServiceDB as "DB"
+database waterServiceDB as "DB"
+
+teaService --> tealeafService: Eureka
+tealeafService --> tealeafServiceDB
+teaService --> waterService: Eureka
+waterService --> waterServiceDB
+
+@enduml
+----
+
+* Spring Boot Actuator
+* Prometheus server to collect the metrics.
+* Micrometer for metrics and distributed tracing support.
+* Zipkin reporter to assure applications send SpanID in the Zipkin format.
+
+== Grafana dashboard
+
+The dashboard confirms that it is not just a one-off error, and we can see that it is happening to multiple users.
+
+=== Tracing
+
+We can drill down and look at the traces to look at a specific request and see what error is happening:
+
+* Explore -> "Search" query type -> Tags: `error=true` -> Select Trace ID.
+
+It is possible to switch between viewing tracing and monitoring data.
+
+=== Metrics
+
+We can monitor the CPU and heap.
+
+If one of the services cause latency spikes, so we can find out the service responsible for slowing down the system or whether the real cause is HTTP or database.
+
+We can see a trace *before* and *after* the latency spike if we attach metadata to the metrics, i.e. attaching Trace ID and Span ID to the metrics.
+
+=== Summary
+
+* Correlated metadata
+** Logs to Traces (and vice versa)
+** Traces to Metrics (via common tags)
+** Metrics to Traces (via exemplars) to Logs
+* The Spring portfolio is instrumented: WebMVB, WebFlux, etc. instrumentation
+* Third-party libraries are also instrumented: `jdbc-observations`, OpenFeign, etc.
+
+== Micrometer
+
+=== Micrometer 1.9 (May 2022)
+
+* OLTP Registry (OpenTelemetry line protocol).
+** Just put the OLTP registry onto the classpath.
+* `HighCardinalityTagsDetector`.
+* Exemplars (Prometheus).
+** Metadata attached to the metrics (sampling the metadata, attaching Trace ID and Span ID into the time series).
+
+=== Micrometer 1.10 (November 2022)
+
+Mostly restructuring and renaming packages incorporating distributed tracing into Micrometer by default.
+
+* Micrometer Tracing (Sleuth without Spring dependencies).
+** Distributed tracing support.
+* Micrometer Docs generator.
+** Instrumentation documentation generation, list of tags, etc.
+* Micrometer Context Propagation.
+* Observation AP(`micrometer-core`).
+** New set of API.
+
+==== Observation API
+
+Each observation must have a name and to be passed into the observation registry.
+
+Configuring the observation and instrumenting some business logic example (all the handlers registered will be called):
+
+[,java]
+----
+ObservationRegistry registry = ObservationRegistry.create();
+
+registry.observationConfig()
+    .observationHandler(new MeterHandler(...))
+    .observationHandler(new TracingHandler(...))
+    .observationHandler(new LoggingHandler(...))
+    .observationHandler(new AuditEventHandler(...));
+----
+
+[,java]
+----
+Observation observation = Observation.start("s1", registry);
+try (Observation.Scope scope = observation.openScope()) {
+    Thread.sleep(1000); // Business logic
+} catch (Exception exception)
+    observation.error(exception);
+} finally {
+    // TODO: attach tags (key-value)
+    observation.stop();
+}
+----
+
+The observation can be created but not started.
+
+[,java]
+----
+Observation.createNotStarted("talk", registry)
+    .lowCardinalityKeyValue("conference", "S1")
+    .highCardinalityKeyValue("speakerId", speakerId)
+    .observe(this::talk);
+----
+
+We don't need to be that verbose:
+[,java]
+----
+@Observed
+public void talk() {
+    // Business logic
+}
+----
+

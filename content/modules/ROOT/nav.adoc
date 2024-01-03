@@ -71,6 +71,10 @@
 
 
 
+** xref:conferences/spring-one-2023.adoc[]
+*** xref:conferences/04-spring-one-2023/01-observability-of-your-application.adoc[]
+
+
 * xref:docker/docker.adoc[]
 * xref:english/english.adoc[]
 * xref:fuck-ups/fuck-ups.adoc[]
