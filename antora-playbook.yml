@@ -32,4 +32,5 @@ asciidoc:
     table-caption: ''
     video-caption: ''
   extensions:
+    # Extension to generate PlantUML and other diagrams.
     - asciidoctor-kroki

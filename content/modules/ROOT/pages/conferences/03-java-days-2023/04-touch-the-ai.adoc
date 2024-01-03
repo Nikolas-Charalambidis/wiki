@@ -166,9 +166,9 @@ API:
 *** Send answer and link to document to the user
 ** Opportunity:
 +
-> Manager: "No need embedded, Microsoft can select a folder/storage for cognitive search (Azure Cognitive Search) "
+> Manager: "No need embedded, Microsoft can select a directory/storage for cognitive search (Azure Cognitive Search) "
 +
-> Me: "Ok, it is a good way, it will cost 30k USD a month but I can do cheaper"
+> Me: "Ok, it is a good way, it will cost 30k USD a month, but I can do cheaper"
 
 * ChatBot and Voice
 ** HR ChatBot (how many vacation days do I still have)
