@@ -7,6 +7,10 @@ endif::[]
 ifeval::['{source}' != '']
 {date}, source: {source}
 endif::[]
+ifeval::['{docs}' != '']
+, documentation: {docs}
+endif::[]
 
-// reset the variable
+// reset the variables
 :source:
+:docs:

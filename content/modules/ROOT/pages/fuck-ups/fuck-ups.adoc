@@ -1,0 +1,59 @@
+= Fuck-ups
+
+This page contains a collection of fuck-ups I made while programming hopefully learned a lesson from them.
+
+The collection is not complete as I fucked up many times in my life. I just started to collect them a bit later. As the number will grow, I probably organize them into specific directories.
+
+Why they are not among other things I learned? There are two reasons:
+
+* If I fuck up again, I would like to see "Ha, you fucked this exactly up before!".
+* The collection does not follow the "Today I learned" idea but rather "I fucked up because I didn't read docs".
+
+== Maven
+
+:label: Maven Clean Plugin always removes the default output directory
+:date: 14-12-2023
+:source: link:https://stackoverflow.com/a/77660274/3764965[StackOverflow] (self)
+:docs: link:https://maven.apache.org/plugins/maven-clean-plugin/clean-mojo.html[clean-mojo]
+include::partial$item.adoc[]
+
+I customized link:https://maven.apache.org/plugins/maven-clean-plugin/index.html[Maven Clean Plugin] because I wanted to make a clean-up some generated files from the earlier phases I wanted to package but not to remain in the `target` after it. I chose `pre-integration-test`.
+
+[,xml]
+----
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-clean-plugin</artifactId>
+    <version>${maven-clean-plugin.version}</version>
+    <executions>
+        <execution>
+            <phase>post-integration-test</phase>
+            <goals>
+                <goal>clean</goal>
+            </goals>
+            <configuration>
+                <filesets>
+                    <fileset>
+                        <directory>${project.basedir}/refs</directory>
+                    </fileset>
+                </filesets>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+----
+
+The integration tests meant to run in the later `integration-test` phase were not executed at all as they were simply missing. Why? The plugin whipped the whole `target` out. To retain the `target` (i.e. the default output directory), one needs to set link:https://maven.apache.org/plugins/maven-clean-plugin/clean-mojo.html#excludeDefaultDirectories[excludeDefaultDirectories] ti `true`.
+
+[,xml]
+----
+<configuration>
+    <excludeDefaultDirectories>true</excludeDefaultDirectories>
+    <filesets>
+        <fileset>
+            <directory>${project.basedir}/refs</directory>
+        </fileset>
+    </filesets>
+</configuration>
+----
+
