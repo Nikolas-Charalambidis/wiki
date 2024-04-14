@@ -5,7 +5,7 @@
 === To be a primer on *something*
 - Basic information about something.
 +
-> "I would definitely recommend some primer on actual programming."
+> "I would recommend some primer on actual programming."
 
 === To be a work of art
 - Something made by an artist as a beautiful work of art. It can be used as irony.
@@ -47,8 +47,13 @@
 +
 > "Let's give this one a spin."
 
+=== To give a hoot about *something*
+- To care about something.
++
+> "Nobody gives a hoot who you are married to."
+
 === To grasp *something*
-- To understand something that is complicated or difficult.
+- To understand something complicated.
 +
 > "They don't grasp the implications of these changes."
 
@@ -65,7 +70,7 @@
 === To lump *something* together
 - To group something together
 +
-> "They are lumped together with the troublemakers and basically written off."
+> "They are lumped together with the troublemakers and written off."
 
 === To make a case for *something*
 - To make an argument for something or explain why it should be done.
@@ -98,7 +103,7 @@
 === To strike terror/fear into *somebody’s* heart
 - To make someone feel frightened.
 +
-> "The third semester features economy, which strikes fear in the hearts of students for a good reason."
+> "The third semester features economy, which strikes fear in students' hearts for a good reason."
 
 === To tweak *something*
 - To fine-tune, improve or debug something.
@@ -108,10 +113,10 @@
 
 == Quotes
 
-> "People don't change, they just become more of who they really are." 
+> "People don't change, they just become more of who they are." 
 > 
 > -- Hugh Laurie as Dr. House
 
-> "Satire is essential: It’s the engine of any democracy. If a government wants to define itself as democratic, it must also behave as such to don’t pass as false and hypocritical."
+> "Satire is essential: It’s the engine of any democracy. If a government wants to define itself as democratic, it must also behave as such not to pass as false and hypocritical."
 
 
