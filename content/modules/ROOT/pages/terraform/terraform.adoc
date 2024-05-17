@@ -1,0 +1,35 @@
+= Terraform
+
+== Installation & versions
+
+:label: Install and use a specific version
+:date: 17-05-2024
+:source: link:https://stackoverflow.com/a/56283464/3764965[StackOverflow]
+include::partial$item.adoc[]
+
+Use `tfenv` to enable management of the various Terraform versions.
+
+- Install `tfenv`:
++
+[,bash]
+----
+brew install tfenv
+----
+- List Terraform versions:
++
+[,bash]
+----
+brew install tfenv
+----
+- Install a specific Terraform version:
++
+[,bash]
+----
+tfenv install 1.6.2
+----
+- Use a specific Terraform version (must be previously installed):
++
+[,bash]
+----
+tfenv use1.6.2
+----
