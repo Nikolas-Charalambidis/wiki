@@ -1,4 +1,4 @@
-= How To Be a Java Automated Testing Superstar
+= Observability of your application
 
 :link: https://springone.io/2021/sessions/how-to-be-a-java-automated-testing-superstar
 :author: Jonatan Ivanov as Staff Engineer, VMware
