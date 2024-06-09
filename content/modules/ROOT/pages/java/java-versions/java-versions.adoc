@@ -1,0 +1,491 @@
+= Java versions
+
+== Current preview features
+
+=== link:https://openjdk.org/jeps/447[JEP 447]: Statements before super(...) (Preview)
+
+- Preview: 22
+
+[,java]
+----
+public Sub(Certificate certificate) {
+    var publicKey = certificate.getPublicKey();
+    if (publicKey == null)
+        throw new IllegalArgumentException("null certificate");
+    final byte[] byteArray = switch (publicKey) {
+        case RSAKey rsaKey -> ...
+        case DSAPublicKey dsaKey -> ...
+        ...
+        default -> ...
+    };
+    super(byteArray);
+}
+----
+
+=== link:https://openjdk.org/jeps/463[JEP 463]: Implicitly Declared Classes and Instance Main Methods (Second Preview)
+
+- Preview: 21
+
+Evolve the Java programming language so that students can write their first programs without needing to understand language features designed for large programs.
+
+[,java]
+----
+void main() {
+    System.out.println("Hello World!");
+}
+----
+
+== Java 22
+
+March 2024
+
+=== link:https://openjdk.org/jeps/456[JEP 456]: Unnamed Variables & Patterns
+
+Java programming language is enhanced with unnamed variables and unnamed patterns, which can be used when variable declarations or nested patterns are required but never used. Both are denoted by the underscore character, _.
+
+[,java]
+----
+try (var _ = ScopedContext.acquire()) {    // Unnamed variable
+    ... no use of acquired resource ...
+} catch (Exception _) { ... }
+----
+[,java]
+----
+...stream.collect(Collectors.toMap(
+    String::toUpperCase,
+    _ -> "NODATA"))    // Unnamed variable
+----
+
+=== link:https://openjdk.org/jeps/458[JEP 458]: Launch Multi-File Source-Code Programs
+
+Enhance the java application launcher to be able to run a program supplied as multiple files of Java source code. This will make the transition from small programs to larger ones more gradual, enabling developers to choose whether and when to go to the trouble of configuring a build tool.
+
+[,java]
+----
+// file MainApplication.java
+public class MainApplication {
+    public static void main(String[] args) {
+        Person p = new Person("Billy", "Korando");
+        System.out.println("Hello, " + p.toString() + "!");
+    }
+}
+----
+[,java]
+----
+// file Person.java
+record Person(String fName, String lName) {
+    public String toString(){
+        return fName + " " + lName;
+    }
+}
+----
+[,bash]
+----
+$ java MainApplication.java
+Hello Billy Korando!
+----
+
+== Java 21
+
+=== link:https://openjdk.org/jeps/431[JEP 431]: Sequenced Collections
+
+It introduces new interfaces to represent collections with a defined encounter order.
+
+**SequencedCollection:**
+[,java]
+----
+interface SequencedCollection<E> extends Collection<E> {
+    // new method
+    SequencedCollection<E> reversed();
+    // methods promoted from Deque
+    void addFirst(E);
+    void addLast(E);
+    E getFirst();
+    E getLast();
+    E removeFirst();
+    E removeLast();
+}
+----
+[,java]
+**SequencedSet:**
+----
+interface SequencedSet<E> extends Set<E>, SequencedCollection<E> {
+    SequencedSet<E> reversed();    // covariant override
+}
+----
+**SequencedMap:**
+[,java]
+----
+interface SequencedMap<K,V> extends Map<K,V> {
+    // new methods
+    SequencedMap<K,V> reversed();
+    SequencedSet<K> sequencedKeySet();
+    SequencedCollection<V> sequencedValues();
+    SequencedSet<Entry<K,V>> sequencedEntrySet();
+    V putFirst(K, V);
+    V putLast(K, V);
+    // methods promoted from NavigableMap
+    Entry<K, V> firstEntry();
+    Entry<K, V> lastEntry();
+    Entry<K, V> pollFirstEntry();
+    Entry<K, V> pollLastEntry();
+}
+----
+
+==== link:https://openjdk.org/jeps/441[JEP 441]: Pattern Matching for switch
+
+- Preview: 17
+
+Java programming language is enhanced with pattern matching for switch expressions and statements.
+
+**Improved enum constant case labels:**
+
+[,java]
+----
+sealed interface Currency permits Coin {}
+enum Coin implements Currency { HEADS, TAILS }
+----
+[,java]
+----
+static void goodEnumSwitch1(Currency c) {
+    switch (c) {
+        case Coin.HEADS -> {    // Qualified name of enum constant as a label
+            System.out.println("Heads");
+        }
+        case Coin.TAILS -> {
+            System.out.println("Tails");
+        }
+    }
+}
+----
+[,java]
+----
+static void goodEnumSwitch2(Coin c) {
+    switch (c) {
+        case HEADS -> {
+            System.out.println("Heads");
+        }
+        case Coin.TAILS -> {    // Unnecessary qualification but allowed
+            System.out.println("Tails");
+        }
+    }
+}
+----
+
+**Patterns in switch labels:**
+[,java]
+----
+static void patternSwitchTest(Object obj) {
+    String formatted = switch (obj) {
+        case Integer i -> String.format("int %d", i);
+        case Long l    -> String.format("long %d", l);
+        case Double d  -> String.format("double %f", d);
+        case String s  -> String.format("String %s", s);
+        default        -> obj.toString();
+    };
+}
+----
+[,java]
+----
+static void testNew(Object obj) {
+    switch (obj) {
+        case String s when s.length() == 1 -> ...
+        case String s                      -> ...
+        ...
+    }
+}
+----
+
+**Enhanced type checking:**
+[,java]
+----
+record Point(int i, int j) {}
+enum Color { RED, GREEN, BLUE; }
+----
+[,java]
+----
+static void typeTester(Object obj) {
+    switch (obj) {
+        case null            -> System.out.println("null");
+        // Beware of dominance of String over CharSequence!
+        case CharSequence cs -> System.out.println("CharSequence");
+        case String s        -> System.out.println("String");
+        case Color c         -> System.out.println("Color: " + c.toString());
+        case Point p         -> System.out.println("Record class: " + p.toString());
+        case int[] ia        -> System.out.println("Array of ints of length" + ia.length);
+        default              -> System.out.println("Something else");
+    }
+}
+----
+
+=== link:https://openjdk.org/jeps/440[JEP 440]: Record Patterns
+
+- Preview: 19
+
+Java programming language is enhanced with record patterns to deconstruct record values.
+
+**Pattern matching and records:**
+[,java]
+----
+static void printSum(Object obj) {
+    if (obj instanceof Point(int x, int y)) {
+        System.out.println(x+y);
+    }
+}
+----
+
+**Nested record patterns:**
+[,java]
+----
+static void printColorOfUpperLeftPoint(Rectangle r) {
+    if (r instanceof Rectangle(ColoredPoint(Point p, Color c),
+                               ColoredPoint lr)) {
+        System.out.println(c);
+    }
+}
+----
+[,java]
+----
+static void printXCoordOfUpperLeftPointWithPatterns(Rectangle r) {
+    if (r instanceof Rectangle(ColoredPoint(Point(var x, var y), var c),
+                               var lr)) {
+        System.out.println("Upper-left corner: " + x);
+    }
+}
+----
+
+=== link:https://openjdk.org/jeps/444[JEP 444]: Virtual Threads
+
+- Preview: 19
+
+It introduces virtual threads to the Java Platform.
+Virtual threads are lightweight threads that dramatically reduce the effort of writing, maintaining, and observing high-throughput concurrent applications.
+
+[,java]
+----
+try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+    IntStream.range(0, 10_000).forEach(i -> {
+        executor.submit(() -> {
+            Thread.sleep(Duration.ofSeconds(1));
+            return i;
+        });
+    });
+}  // executor.close() is called implicitly, and waits
+----
+
+== Java 20
+
+March 2023
+
+== Java 19
+
+September 2022
+
+== Java 18
+
+March 2022
+
+=== link:https://openjdk.org/jeps/413[JEP 413]: Code Snippets in Java API Documentation
+
+It introduces an `@snippet` tag for JavaDoc's Standard Doclet, to simplify the inclusion of example source code in API documentation.
+
+Markup tags define regions within the content of a snippet: `@start`, `@end`, `@highlight`, `@replace`, and `@link`.
+
+**Inline snippets:** An inline snippet contains the content of the snippet within the tag itself.
+
+[,java]
+----
+/**
+ * The following code shows how to use {@code Optional.isPresent}:
+ * {@snippet :
+ * if (v.isPresent()) {
+ *     System.out.println("v: " + v.get());
+ * }
+ * }
+ */
+----
+
+**External snippets:** An external snippet refers to a separate file that contains the content of the snippet.
+[,java]
+----
+/**
+ * The following code shows how to use {@code Optional.isPresent}:
+ * {@snippet file="ShowOptional.java" region="example"}
+ */
+----
+[,java]
+----
+public class ShowOptional {
+    void show(Optional<String> v) {
+        // @start region="example"
+        if (v.isPresent()) {
+            System.out.println("v: " + v.get());
+        }
+        // @end
+    }
+}
+----
+
+=== link:https://openjdk.org/jeps/400[JEP 400]: UTF-8 by Default
+
+UTF-8 is specified as the default charset of the standard Java APIs.
+
+== Java 17 LTS
+
+September 2021
+
+=== link:https://openjdk.org/jeps/409[JEP 409]: Sealed Classes
+
+- Release: 17
+- Preview: 15
+
+Sealed classes and interfaces restrict which other classes or interfaces may extend or implement them.
+
+Exactly one of the modifiers `final`, `sealed`, and `non-sealed` must be used by each permitted subclass.
+
+[,java]
+----
+sealed interface Celestial
+    permits Planet, Star, Comet { ... }
+
+final class Planet implements Celestial { ... }
+final class Star   implements Celestial { ... }
+final class Comet  implements Celestial { ... }
+----
+
+== Java 16
+
+March 2021
+
+=== link:https://openjdk.org/jeps/395[JEP 395]: Records
+
+- Release: 16
+
+Java introduced records, classes that act as transparent carriers for immutable data.
+
+[,java]
+----
+record Range(int lo, int hi) {
+    // Compact canonical validating constructor
+    Range {
+        if (lo > hi)  // referring here to the implicit constructor .parameters
+            throw new IllegalArgumentException(String.format("(%d,%d)", lo, hi));
+    }
+}
+----
+
+[,java]
+----
+record Rational(int num, int denom) {
+    // Compact canonical normalizing constructor.
+    Rational {
+        int gcd = gcd(num, denom);
+        num /= gcd;
+        denom /= gcd;
+    }
+}
+----
+
+=== link:https://openjdk.org/jeps/394[JEP 394]: Pattern Matching for instanceof
+
+- Preview: 14
+
+Java programming language is enhanced with pattern matching for the `instanceof` operator. The pattern variables use the concept of _flow scoping_.
+
+[,java]
+----
+if (obj instanceof String s) {
+    // `String s` is visible here.
+}
+// `String s` is NOT visible here.
+----
+[,java]
+----
+if (!(obj instanceof String s)) {
+    // `String s` is NOT visible here.
+} else {
+    // `String s` is visible here.
+}
+----
+
+=== link:https://openjdk.org/jeps/392[JEP 392]: Packaging Tool
+
+The `jpackage` tool packages a Java application into a platform-specific package that includes all the necessary dependencies supporting the following formats:
+
+- Linux: `deb` and `rpm`
+- macOS: `pkg` and `dmg`
+- Windows: `msi` and `exe`
+
+[,java]
+----
+jpackage --name myapp --input lib --main-jar main.jar --type pkg
+----
+
+=== link:https://openjdk.org/jeps/357[JEP 357]: Migrate from Mercurial to Git
+
+The OpenJDK Community's source code repositories were migrated from Mercurial (hg) to Git.
+
+Link: https://github.com/openjdk
+
+== Java 15
+
+September 2020
+
+=== link:https://openjdk.org/jeps/378[JEP 378]: Text Blocks
+
+A text block is a multi-line string literal that avoids the need for most escape sequences, automatically formats the string in a predictable way.
+
+- Preview: 13
+
+[,java]
+----
+final String html = """
+                    {
+                        "message": "Hello world"
+                    }
+                    """;
+----
+
+
+=== link:https://openjdk.org/jeps/377[JEP 377]: ZGC: A Scalable Low-Latency Garbage Collector
+
+- Experimental: 11
+
+Ultra-low latency garbage collector perfect for large heaps and minimal pauses, but increased memory overhead.
+
+[,bash]
+----
+java -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -jar app.jar
+----
+[,bash]
+----
+java -XX:+UseZGC -jar app.jar
+----
+
+=== link:https://openjdk.org/jeps/379[JEP 379]: Shenandoah: A Low-Pause-Time Garbage Collector
+
+Low-pause-time garbage collector ideal for responsive applications, but higher CPU usage and complexity.
+
+[,bash]
+----
+java -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -jar myapp.jar
+----
+[,bash]
+----
+java -XX:+UseShenandoahGC -jar myapp.jar
+----
+
+== Java 14
+
+March 2020
+
+=== link:https://openjdk.org/jeps/358[JEP 358]: Helpful NullPointerExceptions
+
+Java gives helpful details about occurred `NullPointerException`:
+
+[,java]
+----
+Exception in thread "main" java.lang.NullPointerException:
+        Cannot assign field "i" because "a" is null
+    at Prog.main(Prog.java:5)
+----
