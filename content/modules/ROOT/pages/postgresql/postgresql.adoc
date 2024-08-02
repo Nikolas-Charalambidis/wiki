@@ -1,5 +1,19 @@
 = PostgreSQL
 
+== Database Installation
+
+:label: Missing postgres user
+:date: 10-07.2024
+:source: link:https://stackoverflow.com/q/15301826/3764965[StackOverflow]
+
+If PostgreSQL is installed using homebrew, user `postgres` is not created as suggested in the link:https://stackoverflow.com/questions/15301826/psql-fatal-role-postgres-does-not-exist#comment91332745_15309551[StackOverflow comment]
+
+[,shell]
+----
+cd  /opt/homebrew/Cellar/postgresql@14/14.12/bin/
+createuser -s postgres
+----
+
 == Database Administration
 
 :label: Start
