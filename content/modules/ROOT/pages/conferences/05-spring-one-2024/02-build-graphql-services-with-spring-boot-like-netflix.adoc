@@ -1,0 +1,266 @@
+= Build GraphQL Services With Spring Boot Like Netflix
+
+:link: https://www.youtube.com/watch?v=DYZEkOsiPY0
+:author: Paul Bakker
+:length: 48:20
+:date: 21-09-2024
+:language: English 🇺🇸
+
+:quote: It becomes very easy to compose different data fetchers.
+
+:rating: 3
+:pros: Impressive DGS integration with virtual threads.
+:cons: Database integration ignored: how to build the DB query and test it with DGS?
+:cons2: Batch loading skipped which I was curious about since it is a common problem to solve.
+:cons3: The speaker's coding habits are questionable despite of being a Java Champion.
+
+include::partial$session.adoc[]
+
+== GraphQL
+
+Every GraphQL must have a schema and brings flexibility by selecting fields to query (no over-fetching).
+The communication happens typically over HTTP via one endpoint with any HTTP library: GrapshQL is a high level abstraction. Also WebSockets are possible to use.
+
+== GraphQL Federation microservices
+
+GraphQL Federated Gateway distributes parts of the request into various DGS Spring Boot microservices.
+The Gateway needs only to know about the schemas of these different microservices with no custom logic required despite of ownership of data by various services.
+
+== DGS
+
+Open-source Netflix framework was created 4 years ago though Spring Boot introduced a GraphQL support 2 years ago. The advantage is that both can be used simultaneously because DGS was recently integrated into Spring.
+
+Create a `schema/schema.graphsqls` file:
+
+**Example schema**
+[#schema]
+[,graphql]
+----
+type Query {
+    lolomo: [ShowCategory]
+}
+
+type ShowCategory {
+    id: Int
+    name: String
+    shows: [Show]
+}
+
+type Show {
+    title: String
+    artworkUrl: String
+}
+----
+
+Create a fetcher responsible for the `lolomo` query, ex. `LolomoDataFetcher` (there is a DGS plugin to link the annotations with the GraphQL schema for better navigation):
+
+[,java]
+----
+@DgsComponent
+public class LolomoDataFetcher {
+
+    @Autowired
+    private ShowsRepository showsRepository;
+
+    @DgsQuery
+    public List<ShowCategory> lolomo() {
+        return List.of(
+            ShowCategory.newBuilder().id(1).name("Top 10")
+                .shows(showsRepositorye.showsForCategory(1))
+                .build(),
+            ShowCategory.newBuilder().id(2).name("Continue Watching")
+                .shows(showsRepositorye.showsForCategory(2))
+                .build()
+        );
+    }
+}
+----
+
+We are free to use Java POJOs as classes, simple records or generated via a GraphQL codegen plugin.
+
+Upon running, enter `localhost:8080/graphql` that opens a standard GraphQL editor with autocompletion based on the query.
+
+**Request**
+[,graphql]
+----
+{
+    lolomo {
+        name
+        shows {
+            title
+            afterworkUrls
+        }
+    }
+}
+----
+**Response**
+[,json]
+----
+{
+    "data" : {
+        "lolomo" : [
+            {
+                "name" : "Top 10",
+                "shows" : [
+                    {
+                        "title" : "The Witcher",
+                        "artworkUrl" : null
+                    }
+                    ...
+                ]
+            },
+            {
+                "name" : "Continue Watching",
+                "shows" : null
+            }
+        ]
+    }
+}
+----
+
+=== Parallelization
+
+To make the things realistic, the `artworkUrl` is not in the database but rather generated for each user with an image.
+The method is dumb and does not accept a batch.
+
+[,java]
+----
+@Component
+public class ArtowrkService {
+
+private final static Logger LOGGER = LoggerFactory.getLogger(ArtowrkService.class);
+
+    public Stirng generateForTitle(String title) {
+        LOGGER.info("Generating for {}", title);
+
+        // Simulate latency, assume try-catch.
+        Thread.sleep(200);
+
+        return UUID.randomUUID() + "-" + title.toLowerCase().replaceAll(" ", "-");
+    }
+}
+----
+
+The method needs to be for each show, how to do this? We don't want to run the method if `artworkUrl` is not requested, otherwise we generate images that were not requested and it is a bad model.
+
+We need to create a specific fetcher for the artworks in `LolomoDataFetcher` service.
+
+[,java]
+----
+private final ArtworkService artworkService;
+
+@DgsQuery(parentType = "Show)
+public String artworkUrl(DgsDataFetchingEnvironment dfe) {
+    Show show = dfe.getSourceOrThrow();
+    return artworkService.generateForTitle(show.getTitle());
+}
+----
+
+The result is really slow.
+The data fetcher is called all in serial for each of those shows.
+Very often serial behaviors are acceptable, and we don't want to mess with threads when we don't need to do, but in this case we have to think about that.
+
+Since we are on Java 21, we don't need to think about scheduling executors and thinking of how big pool we need.
+
+[,properties]
+----
+dgs.graphql.virtualthreads.enabled = true
+----
+
+The logging shows each generating was each called on a different virtual threads.
+We don't need to care about sizing as virtual threads are super cheap.
+
+Though we can get parallel behavior out of box without thinking about it, we need to be aware that the component is running on  different threads, so we keep in mind the context propagation, security context, etc. though the DGS framework nicely integrates that.
+
+=== Batch loading
+
+We can achieve the same behavior using batch loader if we don't want to use parallelization and the API supports generating artwork URLs for multiple IDs:
+We use a GraphQL Data Loader where we do the same mechanism by instead of calling `ArtworkService` directly we are going to call a batch loader that loads all the IDs the backend should be called for and then do one call.
+
+=== Search query
+
+We modify the GraphQL schema by expanding `Query`:
+
+- `search: [Show]`
+- `search(title: Stirng): [Show]` - simple type
+- `search(searchFilter: SearchFilter) - complex type to search on title, category, etc.
+
+We need to add a new `input` type that are different from outputs (`type`), implement a new query and run it:
+
+[,graphql]
+----
+input SearchFilter {
+    title: String
+}
+----
+
+[,java]
+----
+@DgsQuery
+public List<Show> search(@InputArgument SearchFilter searchFilter) {
+
+    showsRepository.allShows().stream
+        .filter(s -> s.getTitle().toLowerCase().startsWith(searchFilter.getTitle().toLowerCase()))
+        .toList();
+}
+----
+
+The queries can be also combined and we can run both `search` and `lolomo`:
+
+[,graphql]
+----
+{
+    search(searchFilter : { title : "The" }) {
+        title
+        artworkUrl
+    }
+    lolomo {
+        name
+        shows {
+            title
+            artworkUrl
+        }
+    }
+}
+----
+
+== DGS testing
+
+We want to test the data fetcher without loading the whole Spring Boot application, because there can be database, Flyway, warming of PIC clients, etc.
+
+Use `@EnableDgsTest` to execute the query so it imports the DGS core framework.
+
+[,java]
+----
+@SpringBootTest(classes = {
+    LolomoDataFetcher.class,
+    ArtworkService.class,
+    ShowsRepository.class
+})
+@EnableDgsTest
+public class LolomoDataFetcherTest {
+
+    @Autowired
+    DgsQueryExecutor dgsQueryExecutor;
+
+    @Test
+    void search() {
+        @Language("GraphQL")
+        var query = """
+            query {
+                search(searchFilter: {title: "the"}) {
+                    title
+                }
+            }
+            """;
+
+        List<String> titles = dgsQueryExecutor.executeAndExtractJsonPath(query, "data.search[*].title");
+
+        assertThat(titles).containsExactly("The Withcher", "The Last Dance");
+    }
+}
+----
+
+== URL
+
+Get more information at https://netflix.github.io/dgs/

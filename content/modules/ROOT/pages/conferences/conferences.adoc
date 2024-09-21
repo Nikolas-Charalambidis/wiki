@@ -18,3 +18,5 @@ I always credit the presenter, and double-checked that the online publication of
 * xref:conferences/spring-one-2021.adoc[]
 * xref:conferences/java-days-2022.adoc[]
 * xref:conferences/java-days-2023.adoc[]
+* xref:conferences/spring-one-2023.adoc[]
+* xref:conferences/spring-one-2024.adoc[]

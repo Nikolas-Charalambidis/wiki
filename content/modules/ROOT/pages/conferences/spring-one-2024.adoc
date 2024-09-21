@@ -1,0 +1,37 @@
+= Spring One 2024
+
+[%header,cols="1s,2,2"]
+|===
+|#
+|#
+|Remark
+
+|Link
+|link:[https://springone.io/2024]
+|Website updates yearly
+
+|Location
+|?
+
+Worldwide 🌎
+|
+
+|Date
+|August 2024
+|
+
+|Languages
+|English 🇺🇸
+|
+
+|Fee
+|No
+|
+
+|Records availability
+|Yes, essential only
+|https://www.youtube.com/playlist?list=PLgGXSWYM2FpPDrv8zmf3oN6SX1prqmESN
+|===
+
+* xref:conferences/05-spring-one-2024/01-does-your-api-need-a-rest-check-out-graphql.adoc[]
+* xref:conferences/05-spring-one-2024/02-build-graphql-services-with-spring-boot-like-netflix.adoc[]

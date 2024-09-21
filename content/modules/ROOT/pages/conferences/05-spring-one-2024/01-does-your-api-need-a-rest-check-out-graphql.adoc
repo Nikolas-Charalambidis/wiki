@@ -1,0 +1,379 @@
+= Does Your API Need A REST? Check Out GraphQL
+
+:link: https://www.youtube.com/watch?v=tMPC-u891XA
+:author: Dan Vega
+:length: 52:09
+:date: 21-09-2024
+:language: English 🇺🇸
+
+:quote: GraphQL is just a pure execution enginewithout anu transport layer.
+
+:rating: 3
+:pros: The session quite changed my mind about GraphQL due to highlighting the problems with REST that GraphQL does not have.
+:cons: Overly long introduction and specification, only two and half minutes dedicated to features (ex. observability and security).
+:cons2: The N+1 problem and `@BatchMapping` could be described in a more detail.
+
+include::partial$session.adoc[]
+
+== Why GraphQL
+
+What problems are we trying to solve.
+
+* No more over-fetching.
+* Multiple requests for multiple resources with a single call.
+* Avoid REST API explosion of endpoints - the consumers require more and more endpoints with slight modifications
+* Strongly-typed scheme
+** Self documenting
+** Developer tooling
+* Avoids API versioning, which is annoying thing in REST.
+
+We REST APIs for Products, Reviews, Orders, Customers... which leads to API explosion because we have segmented URLs and resources, but then other consumers come and need have requirements, especially when external consumer from a different company is involved.
+The requests start to build up: first we request a client, then products, then related products, then related product reviews, etc.
+
+GraphQL uses a single and gives an option to consumers tell us what they need.
+
+=== "GraphQL is complicated" is a myth
+
+Actually REST is complicated:
+
+* HTTP verbs (`GET`, `POST`, `PUT`...)
+* HTTP status codes
+* Resources and paths
+* API versioning
+
+GraphQL is just something new.
+
+== What is GraphQL
+
+Alternative API building to REST: **Graph** is all way down, to model business domain objects like a graph; **QL** is a query language to access the data.
+
+GraphQL is a query language for your API, and a server-side runtime for executing queries using a type system you define your data.
+GraphQL *isn't tied to any specific database or storage engine* and is instead backed by your existing code and data.
+
+=== Type system
+
+==== Object types
+
+[,graphql]
+----
+type Product {
+    id: ID!                        // Non-nullable
+    title: String                  // Build-in scalar types
+    desc: String
+}
+
+type Order {
+    id: ID!
+    product: Product               // Object type
+    qty: Int
+    orderedOn: Date                // Custom scalar type
+    status: OrderStatus
+}
+----
+
+==== Scalar types
+
+GraphQL comes with a set of default scalar types out of the box:
+
+* `Int`: A signed 32-bit integer.
+* `Float`: A signed double-precision floating point value.
+* `String`: A UTF-8 character sequence.
+* `Boolean`: `true` or `false`.
+* `ID`: The ID scalar type represents a unique identifier, often used to refetch an object or as the key for a cache. The ID type is serialized in the same way as a String; however, defining it as an ID signifies that it is not intended to be human-readable.
+
+==== Enumeration types
+
+[,graphql]
+----
+enum OrderStatus {
+    CANCELED,
+    PENDING,
+    ORDERED,
+    SHIPPED,
+    DELIVERED
+}
+----
+
+==== Interface types
+
+[,graphql]
+----
+interface Review {
+    id: ID!,
+    title: String
+    body: String
+    rating: Int
+}
+
+type ProductReview implements Review {
+    id: ID!,
+    title: String
+    body: String
+    rating: Int
+    product: Product
+}
+
+type OrderReview implements Review {
+    id: ID!,
+    title: String
+    body: String
+    rating: Int
+    order: Order
+}
+----
+
+==== Unions
+
+Search item can be either one or another.
+
+[,graphql]
+----
+union SearchItem = Product | Customer
+
+type Product {
+    id: ID!,
+    title: String
+    desc: String
+    orders: [Order]
+}
+
+type Customer {
+    id: ID!,
+    firstName: String
+    lastName: String
+    email: string
+}
+----
+
+The query searches for the text in all named the fields under the `... on <type>`:
+
+[,graphql]
+----
+query MyQuery {
+    search(text: "Dan") {
+        ... on Product {
+            id
+            desc
+            title
+        }
+        ... on Customer {
+            id
+            email
+            firstName
+            lastName
+        }
+    }
+}
+----
+
+==== Operation types
+
+There are 3 operation types: Query, Mutation, Subscription.
+
+===== Query operation
+
+Query means I want to read some information from the schema:
+I want to get a list product.
+
+[,graphql]
+----
+type Query {
+    allProducts: [Product]!
+    getProduct(id: ID!): Product
+    searchCustomersByFullName(first: String!, last: String!): [Customer]
+}
+----
+
+===== Mutation
+
+I want to create, update, delete.
+
+[,graphql]
+----
+type Mutation {
+    createProduct(title: String, desc: String) : Product
+}
+----
+
+===== Subscription
+
+I want to open up a connection and leave it open, think later like a traditional stock ticker.
+
+==== Input types
+
+We can save from naming all fields (for example for `Mutation`) we can define an argument as an input type:
+
+[,graphql]
+----
+type Mutation {
+    createProduct(product: ProductInput) : Product
+}
+
+input ProductInput {
+    title: String
+    desc: String
+}
+----
+
+==== Variables
+
+Having defined a query:
+
+[,graphql]
+----
+query {
+    findCustomerById(id: 99) {
+        firstName
+        lastName
+        email
+        orders(fist: S) {
+            id
+            product {
+                title
+            }
+            qty
+            orderedOn
+            status
+        }
+    }
+}
+----
+
+In the GraphQL UI we can define variables.
+
+[,json]
+----
+{
+    "customerId": 99
+}
+----
+[,graphql]
+----
+query CustomerDetails($customerId: ID) {
+    findCustomerById(id: $customerId) {
+        ....
+    }
+}
+----
+
+=== Error handling
+
+GraphQL returns HTTP status 200 OK even for the errors which might throw us off at first, but we can return parts of the graph that are available and get an error for the parts that are not available.
+
+[,json]
+----
+{
+    "errors" : [
+        {
+            "message" : "Product with ID 99 not found",
+            "locations" : [
+                {
+                    "line" : 2
+                    "column" : 3
+            ],
+            "path" : [
+                "getProduct
+            ]
+        }
+    ],
+    "data" : {
+        "getProduct" : null
+    }
+}
+----
+
+== Getting started with GraphQL in Spring
+
+We use a combination of two projects: GraphQL Java and Spring Framework.
+
+* link:https://graphql-java.com[**GraphQL Java**] is an open-source implementation of the GraphQL specification in Java developed by Facebook and open-sourced in 2015.
+It is a **pure execution** engine: It does not provide any transport layer, there is no HTTP or IO, no high-level abstractions.
+The query is known as a **selection set** that is handed to the **execution engine** that knows how to map it to different **data fetchers** in the system.
+
+* **Spring for GraphQL** provides support for Spring applications built on GraphQL Java.
+It is a joint collaboration between both teams.
+There is Spring programming model, Spring Boot starter, etc.
++
+**Requirements**
++
+** 1.1.x (November 2022)
+*** Spring Boot 3.0 ~ JDK 17
+*** GraphQL Java 19
+** 1.2.x (May 2023)
+*** Spring Boot 3.1 ~ JDK 17
+*** GraphQL Java 20
+** 1.3.x (May 2023)
+*** Spring Boot 3.3 ~ JDK 17
+*** GraphQL Java 22
+
+Spring adds a transport layer (GraphQL Java itself is basic by principle exactly for this reason): HTTP, WebSocket, RSocket...
+
+=== Live coding
+
+Spring comes with a GraphQL user interface accessible at `localhost:8080/graphql` with a built-in documentation and autocompletion.
+
+[,properties]
+----
+# Yes, really `graphiql`
+spring.graphql.graphiql.enabled=true
+----
+
+It does not matte what data layer is used, whether Spring Data JPS or anything else.
+
+Upon running, GraphQL does schema introspection and warns you about unmapped fields, registrations, arguments, skipped types, etc.
+
+
+The methods annotated with `@QueryMapping` must be named the same as the queries defined in the GraphQL schema.
+
+[,java]
+----
+@Controller
+public class ProductController {
+
+    private final ProductRepository productRepository;
+    private final OrderRepository orderRepository;
+
+    // Required-args constructor.
+
+    @QueryMapping
+    public List<Product> allProducts() {
+        return productRepository.findAll();
+    }
+
+    @QueryMapping
+    public Optional<Product> getProduct(@Argument Integer id) {
+        return productRepository.findById(id);
+    }
+}
+----
+
+==== N+1 problem
+
+If we are selecting just from `product` with no `orders` in the GraphQL schema we are not being penalized for that retrieve on the data side using Hibernate lazy associations.
+
+But what is we don't use an association and call a separate repository or a microservice?
+We can use `@SchemaMapping` with the method named the same as the object in the schema and pass the parent object that is `Product` (the field is `orders`).
+
+[,java]
+----
+@SchemaMapping
+public List<Order> orders(Product product) {
+    // Maybe I have a miroservices to fetch orders.
+    return orderRepository.findAllByProdyctId(product.getId());
+}
+----
+
+We have a problem if we get all the products and all the orders for every product, we are running into the **N+1 problem**, because the method `orders(Product)` is called for each of the products fetched.
+
+We can rework this to do as a batch using `@BatchMapping` so we collect all those IDs before make that call and then call the DB/microservice once to get all the data back.
+
+== Features
+
+* **Observability**: GraphQL is being able to get information from various sources, let it be a database, cache, microservice.
+We need some observability into that to figure out if the things are going slow, where are they going slow.
+GraphQL has a great built-in observability support using Spring and Micrometer.
+* **Pagination**
+* **Security**
+* **Testing**
+* **Federation**: This is new in 1.3.x and it allows to federate out the GraphQL API to different services to manage their own GraphQL APIs (product team, customers team...).
+* **Defer**
