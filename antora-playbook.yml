@@ -34,3 +34,10 @@ asciidoc:
   extensions:
     # Extension to generate PlantUML and other diagrams.
     - asciidoctor-kroki
+
+# UI
+# https://docs.antora.org/antora/latest/playbook/configure-ui/
+# https://stackoverflow.com/questions/53691002/antora-top-navigation-bar-customization
+# https://docs.antora.org/antora/latest/playbook/ui-supplemental-files/
+# https://stackoverflow.com/questions/75920869/custom-css-with-supplemental-ui-in-antora-does-not-work
+
