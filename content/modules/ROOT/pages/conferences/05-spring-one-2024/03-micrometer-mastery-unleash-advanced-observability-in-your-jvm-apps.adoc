@@ -1,0 +1,394 @@
+= Micrometer Mastery: Unleash Advanced Observability In Your JVM Apps
+
+:link: https://www.youtube.com/watch?v=X7rODR2m63c
+:author: Jonatan Ivanov
+:length: 44:32
+:date: 22-09-2024
+:language: English 🇺🇸
+
+:quote: Do you want metrics? Add a handler for it. Do you want tracing? Add a handler for it. Do you want some custom logging for some kind of events? Add a handler for it. Do you want to push data into an audit database table? You might guess it, add a handler for that.
+
+:rating: 3
+:pros: The speaker profficiency with Micrometer is undeniable.
+:pros2: I went from curious to amazed in the 1st half.
+:cons: I went from amazed to horrified in the 2nd half: I am missing to know what the observations should be defined for, i.e. I cannot imagine myself defining Observation itself, context, key-names, and documentation. Should all observation delegates be marked as `@Primary`? I am missing the real-world usage.
+:cons2: Low/high cardinality were not explained.
+
+include::partial$session.adoc[]
+
+Today's systems are increasingly complex.
+
+**Why do we need observability?**
+
+* Environments can be chaotic: You turn a knob here a little and apps are going down there.
+* We need to know with unknown unknowns.
+* Things can be perceived differently by observers.
+
+**Why do we need observability (from the business perspective)?**
+
+* Reduce lost revenue from production incidents: Lower mean time to recovery (MTTR).
+* Require less specialized knowledge: Shared method of investigating across systems.
+* Quantify user experience: Don't guess, measure!
+
+== JVM/Spring
+
+* *Logging*: Logging with JVM/Spring: Slf4j + Logback.Spring provides starters:
+** Logback: `spring-boot-starter-logging`
+** Log4j2: `spring-boot-starter-log4j2`
+* *Metrics*: Spring projects are instrumented using Micrometer that also supports many backends and its API is independent of the configured metrics behind. Spring comes with `spring-boot-actuator`.
+* *Distributed Tracing*: There depends on the Spring Boot version:
+** *Spring Boot 2.x*: Use Spring Cloud Sleuth.
+** *Spring Boot 3.x*: Use Micrometer Tracing (it is basically Sleuth without Spring dependencies) which is a tracing facade. Tracing libraries supported:
+*** Brave (OpenZipkin) which is default.
+*** OpenTelemetry (CNCF) which is experimental.
+
+== Demo (Grafana)
+
+Demo source code is available at link:https://github.com/jonatan-ivanov/teahouse[GitHub].
+
+In distributed tracing a *span* is en event we want to observe and the spans are all connected (one span can trigger another one) and grouped together as a *trace*.
+
+We can jump from logs to traces and back.
+
+[plantuml,ab-partial-all-1,svg]
+----
+(Traces) <-- (Metrics) : Exemplars
+(Traces) <--> (Logs) : Trace ID
+(Logs) <--> (Metrics) : Through\ntraces
+(Metrics) <-- (Traces) : Tags
+----
+
+We can use error attributes to create a query in the metric system.
+
+[]
+----
+sum(rate(http_server_requests_seconds_count{application="tea-service",
+exception="NotFound",method="GET",org="teahouse",outcome="SERVER_ERROR",
+status="500",uri="/tea/{name}"}[$__rate_interval]))
+----
+
+=== Exemplars
+
+How to jump from metrics to tracing, which is a hard problem to tackle because during disaggregation we are losing data: We have 1 million events, and we aggregated them into a single number error rate equals 0.5 - how to jump from the single number 0.5 to one of there 1 million events?
+
+It's impossible, that's why there is a concept called *exemplars* that are metadata attached to the metric values.
+
+Whenever we do a recording, we can sample the distributed tracing library and ask for the Span ID and Trace ID and wrap them into this concept and attach them to the metric values to look at them during aggregation.
+
+== Observation API
+
+Observation API lets us instrumenting the application without doing a lot of boilerplate: We don't need to add logging statements, metrics, distributed tracing, etc. (meaning a lot of releases).
+
+We instrument the code once and get multiple benefits out of it later.
+We don't start a timers for metrics or spans but observations:
+
+=== Observation API basic usage example
+
+This is suitable for a simple single-run `public static void main(..)` application.
+
+[,java]
+----
+Observation observation = Observation.start("talk", registry);
+try { // TODO: Scope
+    doSomething(); // This is what we're observing.
+} catch (Exception exception) {
+    observation.error(exception); // This is signaling an error
+    throw exception;
+} finally { // TODO: Attach tags (key-value)
+    observation.stop();
+}
+----
+
+=== Configuring an `ObservationHandler`
+
+==== Without Spring Boot
+
+We configure a component that will be notified whenever somebody starts/stops an observation or signals an error, so it reacts to the events.
+
+[,java]
+----
+ObservationRegistry registry = ObservationRegistry.create();
+
+registry.observationConfig()
+    .observationHandler(new MetricsHandler(..))
+    .observationHandler(new TracingHandler(..))
+    .observationHandler(new LoggingHandler(..))
+    .observationHandler(new AuditEventHandler(..));
+----
+
+We can define handlers for anything: custom logging, push data into audit database table, etc.
+
+==== With Spring Boot)
+
+Spring Boot autoconfigures handlers for meters and tracing and also registers `ObservationHandler` beans to the `ObservationRegistry`.
+Each `ObservationHandler` becomes automatically registered:
+
+[,java]
+----
+@Bean
+ObservationHandler<MyContext> myHandler() {
+    return MyObservationHandler();
+}
+----
+
+=== Observation API usage
+
+==== Shortcuts
+
+We can create an observation metadata *or* then just use `@Observed` annotation which both do the try-catch-finally dance.
+
+[,java]
+----
+Observation.createNotStarted("talk", registry)
+    .lowCardinalityKeyValue("event", "S1")
+    .highCardinalityKeeyValue("uid", userId)
+    .observe(this::talk); // Observed method
+----
+
+==== `Observation.Context`
+
+Observation context holds the state/data of an Observation (ex. request/response) object and `ObservationHandler`/`ObservationConvention` receives it.
+The context is mutable, so data can be added to it:
+
+* Instrumentation time
+* Pass data between handler methods
+
+=== Usage
+
+There are two ways to observe components:
+
+* If a component gives hook points, we can add some logic.
+* Wrap the service as a decorator.
+
+[,java]
+----
+public class ObservedTeaService implements TeaService {
+
+    // Boilerplate.
+
+    private final TeaService delegate; // Delegate to the business implementatino.
+
+    @Override
+    public TeaResponse make(String name, String size) {
+        return Observation.createNotStarted("make.tea", registry)
+            .lowCardinalityKeyValue("tea.name", name)
+            .highCardinalityKeyValue("tea.size", size)
+            .observe(() -> delegate.make(name, size);
+    }
+}
+----
+
+This solution brings some problems:
+
+* Values are hardcoded to the instrumentation.
+* The instrumentation itself is hardcoded.
+
+There are ways to overcome it:  Observation Predicate and Filter
+
+=== `ObservationPredicate`
+
+It is a `BiPredicate` with `name` and `context` to decide whether an Observation to be ignored (noop).
+
+*Example*: We can disable this way observations for Actuator, Security, etc. that are too chatty.
+
+[,java]
+----
+@Bean
+ObservationPredicate noActuatorServerObservations() {
+    return (name, context) -> {
+        if (name.equals("http.server.requests") && context instanceof ServerRequestObservationContext server Context) {
+            return !serverContext.getCarrier().getRequestURI().startsWith("/actuator");
+        } else {
+            return true;
+        }
+    };
+}
+----
+
+=== `ObservationFilter`
+
+It is used for modifying `Observation.Context` and is called *once* right before `ObservationHandler#onStop`, which is its limitation.
+
+*Example*: There is a bug in Grafana Tempo, there are required metadata for some cases, otherwise it does not work.
+
+[,java]
+----
+@Configuration(proxyBeanMethods = false)
+@ConditionalOnClass(DataSourceBaseContext.class)
+static class DataSourceActuatorConfig {
+
+    @Bean
+    ObservationFilter tempoServiceGraphFilter() {
+        // TODO: remove this once Tempo is fixed: https://github.com/grafana/tempo/issues/2212
+        return context -> {
+            if (context instanceof DataSourceBaseContext dataSourceBaseContext && dataSourceBaseContext.getRemoteServiceName() != null) {
+                context.addHighCardinalityKeyValue(KeyValue.of("db.name", dataSourceBaseContext.getRemoteServiceName()));
+            }
+            return context;
+        }
+    }
+}
+----
+
+=== `ObservationConvention` as conventions for instrumentation
+
+Instrumentation by default provides a convention, like naming, tags (key-values), though we may want to customize the convention for an instrumentation without rewriting the instrumentation.
+
+Since a lot of things are hardcoded (Strings in  tje instrumentation), how to let the users as the instrumenter modify them?
+
+We might want to control these changes because it would mean an output change, the metrics, the spans and other breaking changes, so we need to set the conventions and configure only.
+
+`ObservationConvention` is a way to provide the data and the metadata (key-values) instead of hardcoding them.
+Instrumentation request an Observation convention, otherwise use the default one.
+
+Each Spring instrumentation in Spring portfolio follow this concept.
+
+[,java]
+----
+private static final MakeTeaConvention DEFAULT_CONVENTION = new DefaultMakeTeaConvention();
+private final MakeTeaConvention customConvention;
+...
+
+return Observation.createNotStarted(
+        customConvention,
+        DEFAULT_CONVENTION,
+        () -> new MakeTeaContext(name, size),
+        registry)
+    .observe(() -> delegate.make(name, size));
+----
+[,java]
+----
+public class MakeTeaContext extends Observation.Context {
+
+    private final String teaName;
+    private final String teaSize;
+
+    // Required-args constructor, and getters
+}
+----
+[,java]
+----
+public class DefaultMakeTeaConvention implements MakeTeaConvention {
+
+    @Nullable
+    @Override
+    public String getName() {
+        return "make.tea"
+    }
+
+    @NonNull
+    @Override
+    public KeyValues getLowCardinalityKeyValues(MakeTeaContext context) {
+        return KeyValues.of(
+            "tea.name", context.getTeaName(),
+            "tea.size", context.getTeaSize()
+        );
+    }
+}
+----
+
+There is a problem with instrumenting components is that keeping documentation in sync with implementation is difficult and very error prone.
+
+=== Micrometer Docs Generator
+
+Define an `ObservationDocumentation` enum for the Observation-based instrumentation to generate documentation on it as a part of the build, and integrate it with `ObservationConvention`.
+
+The observation is created from the `ObservationDocumentation` instead from the `Observation` interface.
+
+[,java]
+----
+return MakeTeaDocumentation.Make_TEA.observation(
+        customConvention,
+        DEFAULT_CONVENTION,
+        () -> new MakeTeaContext(name, size),
+        registry)
+    .observe(() -> delegate.make(name, size));
+)
+----
+[,java]
+----
+public class MakeTeaDocumentation implements ObservationDocumentation {
+
+    /**
+     * Make some tea.
+     */
+    MAKE_TEA {
+
+        @Override
+        public Class<? extends ObservationConvention<? extends Observation.Context>> getDefaultConvention() {
+            return DefaultMakeTeaConvention.class;
+        }
+
+        @NonNull
+        @Override
+        public KeyName[] getLowCardinalityKeyNames() {
+            return LowCardinalityKeyNames.values();
+        }
+    };
+
+    enum LowCardinalityKeyNames implements KeyName {
+
+        TEA_NAME {
+
+            @NonNull
+            @Override
+            public String asString() {
+                return "tea.name";
+            }
+        },
+
+        TEA_Size {
+
+            @NonNull
+            @Override
+            public String asString() {
+                return "tea.size";
+            }
+        }
+    }
+}
+----
+[,java]
+----
+@Override
+public KeyValues getLowCardinalityKeyValues(MakeTeaContext context) {
+    return KeyValues.of(
+        MakeTeaDocumentation.LowCardinalityKeyNames.TEA_NAME.withValue(context.getTeaName));
+        MakeTeaDocumentation.LowCardinalityKeyNames.TEA_SIZE.withValue(context.getTeaSize));
+    );
+}
+----
+
+Running `gradle asciidoctor` generates the documentation.
+
+=== Observation API real-world usage examples
+
+* `ServerHttpObservationFilter (Spring MVC)
+* `DefaultServerRequestObservationConvention`
+* `ServerHttpObservationDocumentation`
+
+== What's new
+
+* Improved Exemplars support (Prometheus supported exemplars only for a narrow set of time series, now we can get it for everything).
+* `MeterProvider` to create metrics for dynamic text.
+* Updated to Prometheus Java Client 1.x, though the old .client is supported for backward-compatibility.
+* New Docs site (https://micrometer.io).
+* Observability improvements in the Spring portfolio.
+** Context Propagation + Log Correlation.
+** Auto-Instrumentations, Performance.
+* SBOM Actuator Endpoint since Spring Boot 3.3 which provides all runtime dependencies.
+
+== What's next
+
+These are released in the most recent milestone a week ago (mid of September).
+
+* Exponential histograms (OLTP).
+* `TestObservationRegistry` validation can tell for example we stopped an observation without starting.
+* Spring Boot components:
+** `ProcessInfoContributor` process information (owner, ID, CPU, memory utilization, etc.).
+** `SslInfoContributor` + `SslHealthIndicator` gives information about the certificates (client and server) about the issuers, whether they are expired or about to be expired within a defined timespan.
+* Spring AI instrumentation about what is Spring AI logic doing.
+
+== Q&A
+
+

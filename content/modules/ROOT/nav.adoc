@@ -68,6 +68,11 @@
 ** xref:conferences/spring-one-2023.adoc[]
 *** xref:conferences/04-spring-one-2023/01-observability-of-your-application.adoc[]
 
+** xref:conferences/spring-one-2024.adoc[]
+*** xref:conferences/05-spring-one-2024/01-does-your-api-need-a-rest-check-out-graphql.adoc[]
+*** xref:conferences/05-spring-one-2024/02-build-graphql-services-with-spring-boot-like-netflix.adoc[]
+*** xref:conferences/05-spring-one-2024/03-micrometer-mastery-unleash-advanced-observability-in-your-jvm-apps.adoc[]
+
 
 
 * xref:certifications/certifications.adoc[]

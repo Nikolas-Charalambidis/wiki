@@ -28,7 +28,7 @@ Ubiquitous language is important as analysts and developers should use the same 
 
 * It is shared language between the business and development teams.
 * The language comes from the business and is enriched by the development team.
-*Domain dictionary defines many terms that in/directly help to form the domain.
+* Domain dictionary defines many terms that in/directly help to form the domain.
 
 === Bounded context
 
