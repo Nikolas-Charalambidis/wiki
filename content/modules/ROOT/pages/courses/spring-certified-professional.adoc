@@ -1,0 +1,4 @@
+= Spring Certified Professional
+
+* xref:courses/spring-certified-professional/01-building-a-rest-api-with-spring-boot.adoc[]
+* xref:courses/spring-certified-professional/02-spring-framework-essentials.adoc[]

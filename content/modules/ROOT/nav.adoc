@@ -38,8 +38,6 @@
 *** xref:conferences/01-spring-one-2021/28-how-spring-cloud-gateway-orchestrated-our-app-modernization.adoc[]
 *** xref:conferences/01-spring-one-2021/29-spring-for-architects.adoc[]
 
-
-
 ** xref:conferences/java-days-2022.adoc[]
 *** xref:conferences/02-java-days-2022/01-keynote.adoc[]
 *** xref:conferences/02-java-days-2022/02-scalable-backend.adoc[]
@@ -54,8 +52,6 @@
 *** xref:conferences/02-java-days-2022/11-jooq-a-bit-different-orm-framework.adoc[]
 *** xref:conferences/02-java-days-2022/12-graalvm-java-python-micronaut.adoc[]
 
-
-
 ** xref:conferences/java-days-2023.adoc[]
 *** xref:conferences/03-java-days-2023/01-keynote.adoc[]
 *** xref:conferences/03-java-days-2023/02-upgrade-to-spring-boot-3.adoc[]
@@ -69,12 +65,14 @@
 *** xref:conferences/03-java-days-2023/14-solving-memory-problems-in-java.adoc[]
 *** xref:conferences/03-java-days-2023/15-your-agile-local-environment-with-testcontainers.adoc[]
 
-
-
 ** xref:conferences/spring-one-2023.adoc[]
 *** xref:conferences/04-spring-one-2023/01-observability-of-your-application.adoc[]
 
 
+
+* xref:certifications/certifications.adoc[]
+* xref:courses/courses.adoc[]
+** xref:courses/spring-certified-professional.adoc[]
 * xref:docker/docker.adoc[]
 * xref:english/english.adoc[]
 * xref:fuck-ups/fuck-ups.adoc[]

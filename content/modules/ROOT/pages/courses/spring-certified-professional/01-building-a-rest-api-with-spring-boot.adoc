@@ -1,0 +1,261 @@
+= Building a REST API with Spring Boot
+
+Link: https://spring.academy/courses/building-a-rest-api-with-spring-boot
+
+== Module 2: Developing a Secure App
+
+=== Lesson: link:https://spring.academy/courses/building-a-rest-api-with-spring-boot/lessons/get-list[Get List]
+
+Send pageable request to Spring Data.
+
+[,java]
+----
+interface CashCardRepository extends CrudRepository<CashCard, Long>, PagingAndSortingRepository<CashCard, Long> {
+}
+----
+
+[,java]
+----
+private final CashCardRepository cashCardRepository;
+----
+
+[,java]
+----
+@GetMapping
+private ResponseEntity<List<CashCard>> findAll(Pageable pageable) {
+    Page<CashCard> page = cashCardRepository.findAll(
+    PageRequest.of(
+        pageable.getPageNumber(),
+        pageable.getPageSize(),
+        pageable.getSortOr(Sort.by(Sort.Direction.ASC, "amount"))
+    ));
+    return ResponseEntity.ok(page.getContent());
+}
+----
+
+=== Lesson: link:https://spring.academy/courses/building-a-rest-api-with-spring-boot/lessons/simple-spring-security[Simple Spring Security]
+
+==== Authentication
+
+- *Principal* is a synonym for user that can be a person or another program.
+- *Authentication* is the act of a *Principal* providing its identity to the system, ex. providing credentials (username and password).
+  Upon providing proper credentials, the Principal is authenticated, i.e. successfully logged in.
+- *Authentication Session* is created once a *Principal* gets authenticated and can be implemented in many ways, ex. which can be implemented via *Session Token* placed in a *Cookie*.
+- *Cookie* is a set of data stored in a web client (browser) and associated with a specific URI.
+  They are sent automatically to the server with every request and is persistent for a certain amount of time.
+
+Spring Security implements *Authentication* via **Filter Chain** (`org.springframework.security.web.SecurityFilterChain`) which by default returns *401 UNAUTHORIZED* if the *Principal* is not authenticated.
+
+==== Authorization
+
+Spring Security provides Authorization via *Role-Based Access Control (RBAC)*, which means *Principal* has a number of *Roles*.
+Each *Resource* (or operation) specifies which *Roles* a *Principal* must have in order to perform actions.
+
+==== Same Origin Policy
+
+- *Same Origin Policy (SOP)* is the most basic mechanism of protection that a server implements.
+Only scripts which are contained in a web page are allowed to send requests to the origin (URI) of the web page.
+- *Cross-Origin Resource Sharing* is a way servers can cooperate to relax the *SOP*, by explicitly allowing a lost of "allowed origins".
+This is handy if a system consists of services running on machines with different URIs (Microservices).
+Spring Seciruty provides the `@CrossOrigin` annotation allowing to specify a lost of allowed sites and allowing by default all origins.
+
+==== Common Web Exploits
+
+- *Cross-Site Request Forgery (CSRF)* happens when a malicious piece of code sends a request to a server where a user is authenticated.
+*CSRF Token* is an unique token generated on each request making it harder for an outside actor to insert itself into the conversation.
+- *Cross-Site Scripting (XSS)* is more dangerous and occurs when an attacker tricks a victim application into executing arbitrary code, ex. saving a string into the DB containing a malicious `<script>` tag.
+Unlike CSRF, XSS attacks don’t depend on Authentication.
+The attacks can be mitigated by properly escaping the special HTML characters.
+
+==== Lab
+
+1. Add a Spring Security dependency.
++
+[,groovy]
+----
+dependencies {
+    ...
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    ...
+}
+----
++
+Upon adding the dependency, Spring Security is enabled. By default, *all* endpoints require authentication.
++
+- If accessed via a browser, unauthenticated requests may redirect to a login page (which might not exist if no view is configured).
+- If accessed via a REST client, a `401 UNAUTHORIZED` response is returned.
+- Application errors still result in `500 INTERNAL_SERVER_ERROR`; `403 FORBIDDEN` only occurs when the user is authenticated but lacks necessary authorization.
+
+2. Add a minimum configuration of *Filter Chain*
++
+[,java]
+----
+@Bean
+SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    return http.build();
+}
+----
++
+Upon adding the configuration, all endpoints still require authentication, and unauthenticated requests will return `401 UNAUTHORIZED`.
+No endpoints become accessible yet.
+
+3. Configure basic authentication.
++
+[,java]
+----
+@Bean
+SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+     http
+        .authorizeHttpRequests(request -> request
+            // All HTTP requests to cashcards/ require to be authenticated using HTTP Basic Authentication security (username and password).
+            .requestMatchers("/cashcards/**").authenticated()
+        )
+        .httpBasic(Customizer.withDefaults())
+        // Do not require CSRF security.
+        .csrf(csrf -> csrf.disable());
+     return http.build();
+}
+----
+Upon adjusting the configuration, the rest endpoints return `401 UNAUTHORIZED` instead as the requests must supply a username and password.
+
+4. Add an in-memory user details.
++
+[,java]
+----
+ @Bean
+UserDetailsService testOnlyUsers(PasswordEncoder passwordEncoder) {
+    User.UserBuilder users = User.builder();
+    UserDetails sarah = users
+        .username("sarah1")
+        .password(passwordEncoder.encode("abc123"))
+        .roles() // No roles for now
+        .build();
+    return new InMemoryUserDetailsManager(sarah);
+}
+----
++
+Upon adding, the endpoints protected by authentication become accessible using HTTP Basic credentials (e.g., `sarah1:abc123`).
+
+5. Adjust the in-memory user details with roles and enable role-based security.
++
+[,java]
+----
+@Bean
+UserDetailsService testOnlyUsers(PasswordEncoder passwordEncoder) {
+    User.UserBuilder users = User.builder();
+    UserDetails sarah = users
+        .username("sarah1")
+        .password(passwordEncoder.encode("abc123"))
+        .roles("CARD-OWNER") // new role
+        .build();
+    UserDetails hankOwnsNoCards = users
+        .username("hank-owns-no-cards")
+        .password(passwordEncoder.encode("qrs456"))
+        .roles("NON-OWNER") // new role
+        .build();
+    return new InMemoryUserDetailsManager(sarah, hankOwnsNoCards);
+}
+----
++
+[,java]
+----
+@Bean
+SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http
+        .authorizeHttpRequests(request -> request
+            // enable RBAC: Replace the .authenticated() call with the hasRole(...) call.
+            .requestMatchers("/cashcards/**").hasRole("CARD-OWNER"))
+        .httpBasic(Customizer.withDefaults())
+        .csrf(csrf -> csrf.disable());
+    return http.build();
+}
+----
+Upon adjusting the configuration, the endpoints are accessible for the users with the correct role and `403 FORBIDDEN` for the remaining users.
+
+6. Restrict resources ownership.
++
+[,java]
+----
+interface CashCardRepository extends CrudRepository<CashCard, Long>, PagingAndSortingRepository<CashCard, Long> {
+
+    CashCard findByIdAndOwner(Long id, String owner);
+    Page<CashCard> findByOwner(String owner, PageRequest pageRequest);
+}
+----
++
+[,java]
+----
+@GetMapping("/{requestedId}")
+private ResponseEntity<CashCard> findById(@PathVariable Long requestedId, Principal principal) {
+    Optional<CashCard> cashCardOptional = Optional.ofNullable(cashCardRepository.findByIdAndOwner(requestedId, principal.getName()));
+    if (cashCardOptional.isPresent()) {
+        return ResponseEntity.ok(cashCardOptional.get());
+    } else {
+        return ResponseEntity.notFound().build();
+    }
+}
+----
+
+Spring Security issued a guidance regarding link:https://docs.spring.io/spring-security/site/docs/5.0.x/reference/html/csrf.html#when-to-use-csrf-protection[non-browser clients].
+
+> When should you use CSRF protection? Our recommendation is to use CSRF protection for any request that could be processed by a browser by normal users. If you are only creating a service that is used by non-browser clients, you will likely want to disable CSRF protection.
+
+
+Course: Building a REST API with Spring Boot
+Module 2: Developing a Secure App
+Lesson: https://spring.academy/courses/building-a-rest-api-with-spring-boot/lessons/implementing-put
+
+If you need the server to return the `Location` header of the created resource, then you must use `POST`.
+Alternatively, when the resource URI is known at creation time (for example Invoice API), you can use `PUT`.
+
+[cols="1,1,2,3,1,2", options="header"]
+|===
+|*HTTP Method* |Operation |Definition of Resource URI |What does it do? |Response Status Code |Response Body
+
+|*POST*
+|Create
+|Server generates and returns the URI
+|Creates a sub-resource ("under" or "within" the passed URI)
+|201 CREATED
+|The created resource
+
+|*PUT*
+|Create
+|Client supplies the URI
+|Creates a resource (at the Request URI)
+|201 CREATED
+|The created resource
+
+|*PUT*
+|Update
+|Client supplies the URI
+|Replaces the resource: The entire record is replaced by the object in the Request
+|204 NO CONTENT
+|(empty)
+
+|*PATCH*
+|Update
+|Client supplies the URI
+|Partial Update: modify only fields included in the request on the existing record
+|200 OK
+|The updated resource
+|===
+
+
+
+=== Lesson: link:https://spring.academy/courses/building-a-rest-api-with-spring-boot/lessons/implementing-delete[Implementing Delete]
+
+==== Delete Options
+
+- *Hard Delete* is a simple option and to delete the record from the database.
+With a hard delete, it’s gone forever.
+- *Soft Delete* is an alternative which works by marking records as "deleted" in the database, so they are retained, but marked as deleted, ex. via boolean `IS_DELETED` or timestamp `DELETED_DATE`.
+
+==== Audit Trail and Archiving
+
+If we use *Hard Delete* it is recommended to store additional data to know when and who deleted a record:
+
+- *Archive* the deleted data into a different location.
+- Add audit fields to the record itself, for example `DELETED_DATE` or `DELETED_BY_USER`.
+This is not limited to Delete operations, but Create and Update also.
+

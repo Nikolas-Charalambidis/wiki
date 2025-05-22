@@ -1,0 +1,3 @@
+= Courses
+
+* xref:courses/spring-certified-professional.adoc[]
