@@ -1,64 +1,283 @@
 = Java versions
 
-== Current preview features
+I include only features that interest me.
 
-=== link:https://openjdk.org/jeps/447[JEP 447]: Statements before super(...) (Preview)
+**Quick summary**:
 
-- Preview: 22
+* <<jdk-26,JDK 26>> (in development)
+** <<jep-517,JEP 517>> HTTP/3 support in HttpClient
+
+* <<jdk-25,JDK 25>> (September 2025) LTS
+** <<jep-520,JEP 520>> JFR Method Timing & Tracing
+** <<jep-514,JEP 514>> Ahead-of-Time Command-Line Ergonomics
+** <<jep-513,JEP 513>> Flexible Constructor Bodies allowing expressions before `super(...)` or `this(...)`
+** <<jep-512,JEP 512>> Compact Source Files & Instance Main Methods
+** <<jep-506,JEP 506>> Scoped Values (`ThreadLocal` replacement)
+
+* <<jdk-24,JDK 24>> (March 2025)
+** <<jep-485,JEP 485>> Stream Gatherers
+** <<jep-483,JEP 483>> Ahead-of-Time Class Loading & Linking
+
+* <<jdk-23,JDK 23>> (September 2024)
+** <<jep-467,JEP 467>> Markdown Documentation Comments using `///`
+
+* <<jdk-22,JDK 22>> (March 2024)
+** <<jep-458,JEP 458>> Launch Multi-File Source-Code Programs
+** <<jep-456,JEP 456>> Unnamed Variables & Patterns using `_`
+
+* <<jdk-21,JDK 21>> (September 2023) LTS
+** <<jep-444,JEP 444>> Virtual Threads
+** <<jep-441,JEP 441>> Pattern Matching for `switch` supporting `null`, `case Long l -> ...`, and `when s.equalsIgnoreCase("YES") ->`
+** <<jep-440,JEP 440>> Record Patterns
+** <<jep-431,JEP 431>> Sequenced Collections
+
+* <<jdk-18,JDK 18>> (March 2022)
+** <<jep-413,JEP 413>> Code Snippets in JavaDoc using `@snippet` tag
+** <<jep-400,JEP 400>> UTF-8 by Default
+
+* <<jdk-17,JDK 17>> (September 2021) LTS
+** <<jep-409,JEP 409>> Sealed Classes & Interfaces
+
+* <<jdk-16,JDK 16>> (March 2021)
+** <<jep-395,JEP 395>> Records
+** <<jep-394,JEP 394>> Pattern Matching for `instanceof` supporting `if (obj instanceof String s && s.length() > 5)`
+
+* <<jdk-15,JDK 15>> (September 2020)
+** <<jep-378,JEP 378>> Text Blocks using `"""`
+
+* <<jdk-14,JDK 14>> (March 2020)
+** <<jep-358,JEP 358>> Helpful NullPointerExceptions
+
+[[jdk-26]]
+== link:https://openjdk.org/projects/jdk/26[JDK 26]
+
+In development
+
+[[jep-517]]
+=== link:https://openjdk.org/jeps/517[JEP 517]: HTTP/3 for the HTTP Client API
+
+> Update the link:https://cr.openjdk.org/~dfuchs/8291976/apidoc.05/api/java.net.http/java/net/http/HttpClient.html[HTTP Client API] to support the HTTP/3 protocol, so that libraries and applications can interact with HTTP/3 servers with minimal code change.
+
+To send a request using HTTP/3, you must opt-in to using it.
 
 [,java]
 ----
-public Sub(Certificate certificate) {
-    var publicKey = certificate.getPublicKey();
-    if (publicKey == null)
-        throw new IllegalArgumentException("null certificate");
-    final byte[] byteArray = switch (publicKey) {
-        case RSAKey rsaKey -> ...
-        case DSAPublicKey dsaKey -> ...
-        ...
-        default -> ...
-    };
-    super(byteArray);
+var client = HttpClient.newBuilder()
+                       .version(HttpClient.Version.HTTP_3)
+                       .build();
+----
+
+[[jdk-25]]
+== link:https://openjdk.org/projects/jdk/25[JDK 25] LTS
+
+September 2025
+
+[[jep-520]]
+=== link:https://openjdk.org/jeps/520[JEP 520]: JFR Method Timing & Tracing
+
+> Extend the link:https://dev.java/learn/jvm/jfr/[JDK Flight Recorder (JFR)] with facilities for method timing and tracing via link:https://docs.oracle.com/en/java/javase/24/docs/api/java.instrument/java/lang/instrument/Instrumentation.html[bytecode instrumentation].
+
+It introduces two new JFR event: `jdk.MethodTiming` and `jdk.MethodTrace`.
+
+[,bash]
+----
+$ java -XX:StartFlightRecording:jdk.MethodTrace#filter=java.util.HashMap::resize,filename=recording.jfr ...
+$ jfr print --events jdk.MethodTrace --stack-depth 20 recording.jfr
+----
+
+In practice, configuration files are rather used.
+
+[,bash]
+----
+$ java '-XX:StartFlightRecording:method-timing=::<clinit>,filename=clinit.jfr' ...
+$ jfr view method-timing clinit.jfr
+----
+
+A filter can also name an annotation (including custom ones).
+
+[,bash]
+----
+$ jcmd <pid> JFR.start method-timing=@jakarta.ws.rs.GET
+----
+
+[[jep-514]]
+=== link:https://openjdk.org/jeps/514[JEP 514]: Ahead-of-Time Command-Line Ergonomics
+
+> Make it easier to create ahead-of-time caches, which accelerate the startup of Java applications, by simplifying the commands required for common use cases.
+
+Simplifies <<jep-483>> the two-step workflow into a single step:
+
+[,bash]
+----
+$ java -XX:AOTCacheOutput=app.aot -cp app.jar com.example.App ...
+----
+
+A production run that uses the AOT cache is started the same way as before:
+
+[,bash]
+----
+$ java -XX:AOTCache=app.aot -cp app.jar com.example.App ...
+----
+
+[[jep-513]]
+=== link:https://openjdk.org/jeps/513[JEP 513]: Flexible Constructor Bodies
+
+> In the body of a constructor, allow statements to appear before an explicit constructor invocation, i.e., `super(...)` or `this(...)`. Such statements cannot reference the object under construction, but they can initialize its fields and perform other safe computations. This change allows many constructors to be expressed more naturally. It also allows fields to be initialized before they become visible to other code in the class, such as methods called from a superclass constructor, thereby improving safety.
+
+[,java]
+----
+class Employee extends Person {
+
+    String officeID;
+
+    Employee(..., int age, String officeID) {
+        if (age < 18  || age > 67)
+            // Now fails fast!
+            throw new IllegalArgumentException(...);
+        super(..., age);
+        this.officeID = officeID;
+    }
 }
 ----
 
-=== link:https://openjdk.org/jeps/463[JEP 463]: Implicitly Declared Classes and Instance Main Methods (Second Preview)
+[[jep-512]]
+=== link:https://openjdk.org/jeps/512[JEP 512]: Compact Source Files and Instance Main Methods
 
-- Preview: 21
+> Evolve the Java programming language so that beginners can write their first programs without needing to understand language features designed for large programs.
 
-Evolve the Java programming language so that students can write their first programs without needing to understand language features designed for large programs.
+* Allow main methods to omit the infamous boilerplate of `public static void main(String[] args)`.
+* Introduce a compact form of source file that lets developers get straight to the code.
+* Add a new class in the java.lang package that provides basic line-oriented I/O methods for beginners.
 
 [,java]
 ----
 void main() {
-    System.out.println("Hello World!");
+    IO.println("Hello, World!");
 }
 ----
 
-== Java 22
+[[jep-506]]
+=== link:https://openjdk.org/jeps/506[JEP 506]: Scoped Values
+
+Introduce scoped values, which enable a method to share immutable data both with its callees within a thread, and with child threads. Scoped values are easier to reason about than thread-local variables. They also have lower space and time costs, especially when used together with virtual threads (JEP 444) and structured concurrency (JEP 505).
+
+Problems with thread-local variables:
+
+* Unconstrained mutability — Every thread-local variable is mutable
+* Unbounded lifetime — Once a thread's copy of a thread-local variable is set via the set method, the value to which it was set is retained for the lifetime of the thread, or until code in the thread calls the `remove` method.
+* Expensive inheritance — The overhead of thread-local variables may be worse when using large numbers of threads, because thread-local variables of a parent thread can be inherited by child threads. (A thread-local variable is not, in fact, local to one thread.)
+
+[,java]
+----
+class Framework {
+
+    private static final ScopedValue<FrameworkContext> CONTEXT
+                        = ScopedValue.newInstance();    // (1)
+
+    void serve(Request request, Response response) {
+        var context = createContext(request);
+        where(CONTEXT, context)                         // (2)
+                   .run(() -> Application.handle(request, response));
+    }
+
+    public PersistedObject readKey(String key) {
+        var context = CONTEXT.get();                    // (3)
+        var db = getDBConnection(context);
+        db.readKey(key);
+    }
+
+}
+----
+
+[[jdk-24]]
+== link:https://openjdk.org/projects/jdk/24[JDK 24]
+
+March 2025
+
+[[jep-485]]
+=== link:https://openjdk.org/jeps/485[JEP 485]: Stream Gatherers
+
+> Enhance the link:https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/package-summary.html[Stream API] to support custom intermediate operations. This will allow stream pipelines to transform data in ways that are not easily achievable with the existing built-in intermediate operations.
+
+[,bash]
+----
+jshell> Stream.of(1,2,3,4,5,6,7,8,9).gather(new WindowFixed(3)).toList()
+$1 ==> [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+----
+
+Built-in gatherers in the `java.util.stream.Gatherers` class:
+
+* `fold` is a stateful many-to-one gatherer which constructs an aggregate incrementally and emits that aggregate when no more input elements exist.
+* `mapConcurrent` is a stateful one-to-one gatherer which invokes a supplied function for each input element concurrently, up to a supplied limit.
+* `scan` is a stateful one-to-one gatherer which applies a supplied function to the current state and the current element to produce the next element, which it passes downstream.
+* `windowFixed` is a stateful many-to-many gatherer which groups input elements into lists of a supplied size, emitting the windows downstream when they are full.
+* `windowSliding` is a stateful many-to-many gatherer which groups input elements into lists of a supplied size. After the first window, each subsequent window is created from a copy of its predecessor by dropping the first element and appending the next element from the input stream.
+
+[[jep-483]]
+=== link:https://openjdk.org/jeps/483[JEP 483]: Ahead-of-Time Class Loading & Linking
+
+> Improve startup time by making the classes of an application instantly available, in a loaded and linked state, when the HotSpot Java Virtual Machine starts. Achieve this by monitoring the application during one run and storing the loaded and linked forms of all classes in a cache for use in subsequent runs. Lay a foundation for future improvements to both startup and warmup time.
+
+To create a cache takes two steps. First, run the application once, in a training run, to record its AOT configuration, in this case into the file `app.aotconf`:
+
+[,bash]
+----
+$ java -XX:AOTMode=record -XX:AOTConfiguration=app.aotconf \
+-cp app.jar com.example.App ...
+----
+Second, use the configuration to create the cache, in the file `app.aot`:
+[,bash]
+----
+$ java -XX:AOTMode=create -XX:AOTConfiguration=app.aotconf \
+-XX:AOTCache=app.aot -cp app.jar
+----
+To check if your JVM is correctly configured to use the AOT cache, you can add the option `-XX:AOTMode=on` to the command line:
+[,bash]
+----
+$ java -XX:AOTCache=app.aot -XX:AOTMode=on \
+-cp app.jar com.example.App ...
+----
+
+[[jdk-23]]
+== link:https://openjdk.org/projects/jdk/23[JDK 23]
+
+September 2024
+
+[[jep-467]]
+=== link:https://openjdk.org/jeps/467[JEP 467]: Markdown Documentation Comments
+
+> Enable JavaDoc documentation comments to be written in Markdown rather than solely in a mixture of HTML and JavaDoc @-tags.
+
+[,java]
+----
+/// Returns a hash code value for the object. This method is
+/// supported for the benefit of hash tables such as those provided by
+/// [java.util.HashMap].
+///
+/// The general contract of `hashCode` is:
+///
+///   - Whenever...
+///   - ..
+///
+/// @implSpec
+/// As far as is reasonably practical, the `hashCode` method defined
+/// by class `Object` returns distinct integers for distinct objects.
+///
+/// @return  a hash code value for this object.
+/// @see     java.lang.Object#equals(java.lang.Object)
+/// @see     java.lang.System#identityHashCode
+
+----
+
+[[jdk-22]]
+== link:https://openjdk.org/projects/jdk/22[JDK 22]
 
 March 2024
 
-=== link:https://openjdk.org/jeps/456[JEP 456]: Unnamed Variables & Patterns
-
-Java programming language is enhanced with unnamed variables and unnamed patterns, which can be used when variable declarations or nested patterns are required but never used. Both are denoted by the underscore character, _.
-
-[,java]
-----
-try (var _ = ScopedContext.acquire()) {    // Unnamed variable
-    ... no use of acquired resource ...
-} catch (Exception _) { ... }
-----
-[,java]
-----
-...stream.collect(Collectors.toMap(
-    String::toUpperCase,
-    _ -> "NODATA"))    // Unnamed variable
-----
-
+[[jep-458]]
 === link:https://openjdk.org/jeps/458[JEP 458]: Launch Multi-File Source-Code Programs
 
-Enhance the java application launcher to be able to run a program supplied as multiple files of Java source code. This will make the transition from small programs to larger ones more gradual, enabling developers to choose whether and when to go to the trouble of configuring a build tool.
+> Enhance the java application launcher to be able to run a program supplied as multiple files of Java source code. This will make the transition from small programs to larger ones more gradual, enabling developers to choose whether and when to go to the trouble of configuring a build tool.
 
 [,java]
 ----
@@ -85,58 +304,52 @@ $ java MainApplication.java
 Hello Billy Korando!
 ----
 
-== Java 21
+[[jep-456]]
+=== link:https://openjdk.org/jeps/456[JEP 456]: Unnamed Variables & Patterns
 
-=== link:https://openjdk.org/jeps/431[JEP 431]: Sequenced Collections
+> Enhance the Java programming language with unnamed variables and unnamed patterns, which can be used when variable declarations or nested patterns are required but never used. Both are denoted by the underscore character, `_`.
 
-It introduces new interfaces to represent collections with a defined encounter order.
-
-**SequencedCollection:**
 [,java]
 ----
-interface SequencedCollection<E> extends Collection<E> {
-    // new method
-    SequencedCollection<E> reversed();
-    // methods promoted from Deque
-    void addFirst(E);
-    void addLast(E);
-    E getFirst();
-    E getLast();
-    E removeFirst();
-    E removeLast();
-}
+try (var _ = ScopedContext.acquire()) {    // Unnamed variable
+    ... no use of acquired resource ...
+} catch (Exception _) { ... }
 ----
 [,java]
-**SequencedSet:**
 ----
-interface SequencedSet<E> extends Set<E>, SequencedCollection<E> {
-    SequencedSet<E> reversed();    // covariant override
-}
-----
-**SequencedMap:**
-[,java]
-----
-interface SequencedMap<K,V> extends Map<K,V> {
-    // new methods
-    SequencedMap<K,V> reversed();
-    SequencedSet<K> sequencedKeySet();
-    SequencedCollection<V> sequencedValues();
-    SequencedSet<Entry<K,V>> sequencedEntrySet();
-    V putFirst(K, V);
-    V putLast(K, V);
-    // methods promoted from NavigableMap
-    Entry<K, V> firstEntry();
-    Entry<K, V> lastEntry();
-    Entry<K, V> pollFirstEntry();
-    Entry<K, V> pollLastEntry();
-}
+...stream.collect(Collectors.toMap(
+    String::toUpperCase,
+    _ -> "NODATA"))    // Unnamed variable
 ----
 
-==== link:https://openjdk.org/jeps/441[JEP 441]: Pattern Matching for switch
+[[jdk-21]]
+== link:https://openjdk.org/projects/jdk/21[JDK 21] LTS
+
+[[jep-444]]
+=== link:https://openjdk.org/jeps/444[JEP 444]: Virtual Threads
+
+- Preview: 19
+
+> Introduce _virtual threads_ to the Java Platform. Virtual threads are lightweight threads that dramatically reduce the effort of writing, maintaining, and observing high-throughput concurrent applications.
+
+[,java]
+----
+try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+    IntStream.range(0, 10_000).forEach(i -> {
+        executor.submit(() -> {
+            Thread.sleep(Duration.ofSeconds(1));
+            return i;
+        });
+    });
+}  // executor.close() is called implicitly, and waits
+----
+
+[[jep-441]]
+=== link:https://openjdk.org/jeps/441[JEP 441]: Pattern Matching for switch
 
 - Preview: 17
 
-Java programming language is enhanced with pattern matching for switch expressions and statements.
+> Enhance the Java programming language with pattern matching for `switch` expressions and statements. Extending pattern matching to `switch` allows an expression to be tested against a number of patterns, each with a specific action, so that complex data-oriented queries can be expressed concisely and safely.
 
 **Improved enum constant case labels:**
 
@@ -218,11 +431,12 @@ static void typeTester(Object obj) {
 }
 ----
 
+[[jep-440]]
 === link:https://openjdk.org/jeps/440[JEP 440]: Record Patterns
 
 - Preview: 19
 
-Java programming language is enhanced with record patterns to deconstruct record values.
+> Enhance the Java programming language with record patterns to deconstruct _record values_. Record patterns and type patterns can be nested to enable a powerful, declarative, and composable form of data navigation and processing.
 
 **Pattern matching and records:**
 [,java]
@@ -254,40 +468,71 @@ static void printXCoordOfUpperLeftPointWithPatterns(Rectangle r) {
 }
 ----
 
-=== link:https://openjdk.org/jeps/444[JEP 444]: Virtual Threads
+[[jep-431]]
+=== link:https://openjdk.org/jeps/431[JEP 431]: Sequenced Collections
 
-- Preview: 19
+> Introduce new interfaces to represent collections with a defined encounter order. Each such collection has a well-defined first element, second element, and so forth, up to the last element. It also provides uniform APIs for accessing its first and last elements, and for processing its elements in reverse order.
 
-It introduces virtual threads to the Java Platform.
-Virtual threads are lightweight threads that dramatically reduce the effort of writing, maintaining, and observing high-throughput concurrent applications.
-
+**SequencedCollection:**
 [,java]
 ----
-try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-    IntStream.range(0, 10_000).forEach(i -> {
-        executor.submit(() -> {
-            Thread.sleep(Duration.ofSeconds(1));
-            return i;
-        });
-    });
-}  // executor.close() is called implicitly, and waits
+interface SequencedCollection<E> extends Collection<E> {
+    // new method
+    SequencedCollection<E> reversed();
+    // methods promoted from Deque
+    void addFirst(E);
+    void addLast(E);
+    E getFirst();
+    E getLast();
+    E removeFirst();
+    E removeLast();
+}
+----
+[,java]
+**SequencedSet:**
+----
+interface SequencedSet<E> extends Set<E>, SequencedCollection<E> {
+    SequencedSet<E> reversed();    // covariant override
+}
+----
+**SequencedMap:**
+[,java]
+----
+interface SequencedMap<K,V> extends Map<K,V> {
+    // new methods
+    SequencedMap<K,V> reversed();
+    SequencedSet<K> sequencedKeySet();
+    SequencedCollection<V> sequencedValues();
+    SequencedSet<Entry<K,V>> sequencedEntrySet();
+    V putFirst(K, V);
+    V putLast(K, V);
+    // methods promoted from NavigableMap
+    Entry<K, V> firstEntry();
+    Entry<K, V> lastEntry();
+    Entry<K, V> pollFirstEntry();
+    Entry<K, V> pollLastEntry();
+}
 ----
 
-== Java 20
+[[jdk-20]]
+== link:https://openjdk.org/projects/jdk/20[JDK 20]
 
 March 2023
 
-== Java 19
+[[jdk-19]]
+== link:https://openjdk.org/projects/jdk/19[JDK 19]
 
 September 2022
 
-== Java 18
+[[jdk-18]]
+== link:https://openjdk.org/projects/jdk/18[JDK 18]
 
 March 2022
 
+[[jep-413]]
 === link:https://openjdk.org/jeps/413[JEP 413]: Code Snippets in Java API Documentation
 
-It introduces an `@snippet` tag for JavaDoc's Standard Doclet, to simplify the inclusion of example source code in API documentation.
+> Introduce an `@snippet` tag for JavaDoc's Standard Doclet, to simplify the inclusion of example source code in API documentation.
 
 Markup tags define regions within the content of a snippet: `@start`, `@end`, `@highlight`, `@replace`, and `@link`.
 
@@ -326,20 +571,24 @@ public class ShowOptional {
 }
 ----
 
+[[jep-400]]
 === link:https://openjdk.org/jeps/400[JEP 400]: UTF-8 by Default
 
-UTF-8 is specified as the default charset of the standard Java APIs.
+> Specify UTF-8 as the default charset of the standard Java APIs. With this change, APIs that depend upon the default charset will behave consistently across all implementations, operating systems, locales, and configurations.
 
-== Java 17 LTS
+[[jdk-17]]
+== link:https://openjdk.org/projects/jdk/17[JDK 17] LTS
 
 September 2021
 
+[[jep-409]]
 === link:https://openjdk.org/jeps/409[JEP 409]: Sealed Classes
 
+- Project link:https://openjdk.org/projects/amber/design-notes/records-and-sealed-classes[Amber]
 - Release: 17
 - Preview: 15
 
-Sealed classes and interfaces restrict which other classes or interfaces may extend or implement them.
+> Enhance the Java programming language with link:https://openjdk.org/projects/amber/design-notes/records-and-sealed-classes[sealed classes and interfaces]. Sealed classes and interfaces restrict which other classes or interfaces may extend or implement them.
 
 Exactly one of the modifiers `final`, `sealed`, and `non-sealed` must be used by each permitted subclass.
 
@@ -353,15 +602,18 @@ final class Star   implements Celestial { ... }
 final class Comet  implements Celestial { ... }
 ----
 
-== Java 16
+[[jdk-16]]
+== link:https://openjdk.org/projects/jdk/16[JDK 16]
 
 March 2021
 
+[[jep-395]]
 === link:https://openjdk.org/jeps/395[JEP 395]: Records
 
+- Project link:https://openjdk.org/projects/amber/design-notes/records-and-sealed-classes[Amber]
 - Release: 16
 
-Java introduced records, classes that act as transparent carriers for immutable data.
+> Enhance the Java programming language with link:https://openjdk.org/projects/amber/design-notes/records-and-sealed-classes[records], which are classes that act as transparent carriers for immutable data. Records can be thought of as nominal tuples.
 
 [,java]
 ----
@@ -386,11 +638,13 @@ record Rational(int num, int denom) {
 }
 ----
 
+[[jep-394]]
 === link:https://openjdk.org/jeps/394[JEP 394]: Pattern Matching for instanceof
 
+- Project link:https://openjdk.org/projects/amber/design-notes/patterns/pattern-matching-for-java[Amber]
 - Preview: 14
 
-Java programming language is enhanced with pattern matching for the `instanceof` operator. The pattern variables use the concept of _flow scoping_.
+> Enhance the Java programming language with _pattern matching_ for the `instanceof` operator. Pattern matching allows common logic in a program, namely the conditional extraction of components from objects, to be expressed more concisely and safely.
 
 [,java]
 ----
@@ -408,34 +662,33 @@ if (!(obj instanceof String s)) {
 }
 ----
 
+[[jep-392]]
 === link:https://openjdk.org/jeps/392[JEP 392]: Packaging Tool
 
-The `jpackage` tool packages a Java application into a platform-specific package that includes all the necessary dependencies supporting the following formats:
+> Provide the jpackage tool, for packaging self-contained Java applications.
 
-- Linux: `deb` and `rpm`
-- macOS: `pkg` and `dmg`
-- Windows: `msi` and `exe`
+The supported platform-specific package formats are:
+
+* Linux: `deb` and `rpm`
+* macOS: `pkg` and `dmg`
+* Windows: `msi` and `exe`
 
 [,java]
 ----
 jpackage --name myapp --input lib --main-jar main.jar --type pkg
 ----
 
-=== link:https://openjdk.org/jeps/357[JEP 357]: Migrate from Mercurial to Git
-
-The OpenJDK Community's source code repositories were migrated from Mercurial (hg) to Git.
-
-Link: https://github.com/openjdk
-
-== Java 15
+[[jdk-15]]
+== link:https://openjdk.org/projects/jdk/15[JDK 15]
 
 September 2020
 
+[[jep-378]]
 === link:https://openjdk.org/jeps/378[JEP 378]: Text Blocks
 
-A text block is a multi-line string literal that avoids the need for most escape sequences, automatically formats the string in a predictable way.
-
 - Preview: 13
+
+> Add text blocks to the Java language. A text block is a multi-line string literal that avoids the need for most escape sequences, automatically formats the string in a predictable way, and gives the developer control over the format when desired.
 
 [,java]
 ----
@@ -446,42 +699,15 @@ final String html = """
                     """;
 ----
 
-
-=== link:https://openjdk.org/jeps/377[JEP 377]: ZGC: A Scalable Low-Latency Garbage Collector
-
-- Experimental: 11
-
-Ultra-low latency garbage collector perfect for large heaps and minimal pauses, but increased memory overhead.
-
-[,bash]
-----
-java -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -jar app.jar
-----
-[,bash]
-----
-java -XX:+UseZGC -jar app.jar
-----
-
-=== link:https://openjdk.org/jeps/379[JEP 379]: Shenandoah: A Low-Pause-Time Garbage Collector
-
-Low-pause-time garbage collector ideal for responsive applications, but higher CPU usage and complexity.
-
-[,bash]
-----
-java -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -jar myapp.jar
-----
-[,bash]
-----
-java -XX:+UseShenandoahGC -jar myapp.jar
-----
-
-== Java 14
+[[jdk-14]]
+== link:https://openjdk.org/projects/jdk/14[JDK 14]
 
 March 2020
 
+[[jep-358]]
 === link:https://openjdk.org/jeps/358[JEP 358]: Helpful NullPointerExceptions
 
-Java gives helpful details about occurred `NullPointerException`:
+> Improve the usability of `NullPointerExceptions` generated by the JVM by describing precisely which variable was null.
 
 [,java]
 ----
@@ -489,3 +715,13 @@ Exception in thread "main" java.lang.NullPointerException:
         Cannot assign field "i" because "a" is null
     at Prog.main(Prog.java:5)
 ----
+
+[[jdk-13]]
+== link:https://openjdk.org/projects/jdk/13[JDK 13]
+
+September 2019
+
+[[jdk-12]]
+== link:https://openjdk.org/projects/jdk/12[JDK 12]
+
+March 2019
