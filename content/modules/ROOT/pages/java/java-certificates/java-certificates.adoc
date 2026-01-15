@@ -1,0 +1,26 @@
+= Java Certificates
+
+== Pods
+
+:label: Inable to find valid certification path to requested target
+:date: 05-01-2026
+:source: link:https://stackoverflow.com/a/46195965/3764965[StackOverflow]
+include::partial$item.adoc[]
+
+> org.springframework.web.client.ResourceAccessException: I/O error on POST request for "https://a.b/c": PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+
+The certificate needs to be imported into `cacerts` TrustStore of the used JDK.
+
+1. Export a `Base64-encoded ASCII, single certificate` as a `.pem` file from the browser (usually the first option) and save it as `whatever-certificate.pem`.
+1. (Optional) Locate the `cacerts` TrustStore location of the used Java.
++
+[,bash]
+----
+echo $JAVA_HOME/lib/security/cacerts
+----
+1. Import the certificate into `cacerts` TrustStore. Don't forget to change the `whatever-certificate-alias` alias.
++
+[,bash]
+----
+sudo keytool -import -trustcacerts -alias whatever-certificate-alias -file /Users/Foo/whatever-certificate.pem -keystore $JAVA_HOME/lib/security/cacerts
+----

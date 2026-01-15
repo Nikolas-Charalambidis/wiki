@@ -1,3 +1,4 @@
 = Java
 
+* xref:java/java-certificates/java-certificates.adoc[]
 * xref:java/java-versions/java-versions.adoc[]

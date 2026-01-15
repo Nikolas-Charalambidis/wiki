@@ -83,6 +83,7 @@
 * xref:fuck-ups/fuck-ups.adoc[]
 * xref:intellij-idea/intellij-idea.adoc[]
 * xref:java/java.adoc[]
+** xref:java/java-certificates/java-certificates.adoc[]
 ** xref:java/java-versions/java-versions.adoc[]
 * xref:jira/jira.adoc[]
 * xref:kubernetes/kubernetes.adoc[]
