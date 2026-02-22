@@ -1,0 +1,23 @@
+= Antora
+
+== Configuration
+
+:label: Supplemental UI
+:date: 22-02-2026
+include::partial$item.adoc[]
+
+1. Add supplemental folder.
++
+[,yml]
+----
+ui:
+  supplemental_files: ./supplemental-ui
+----
+2. Create the partials folder:
++
+[,shell]
+----
+mkdir -p supplemental-ui/partials
+----
+3. Copy, paste and modify files into `+++{root}/supplemental-ui/partials/+++`, ex. https://gitlab.com/antora/antora-ui-default/-/blob/master/src/partials/header-content.hbs?ref_type=heads[`header-content.hbs`] for navigation.
+All files are sources in https://gitlab.com/antora/antora-ui-default/-/tree/master/src/partials?ref_type=heads[GitLab].

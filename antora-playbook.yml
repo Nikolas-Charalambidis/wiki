@@ -18,6 +18,7 @@ antora:
     - require: '@antora/lunr-extension'
 
 ui:
+  supplemental_files: ./supplemental-ui
   bundle:
     url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/master/raw/build/ui-bundle.zip?job=bundle-stable
     #url: https://github.com/camptocamp/devops-stack-antora-ui/releases/download/main-latest/ui-bundle.zip
