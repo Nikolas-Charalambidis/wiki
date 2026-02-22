@@ -27,3 +27,17 @@ include::partial$item.adoc[]
 /usr/libexec/java_home -V
 ----
 
+== Customizations
+
+:label: MacOS customizations
+:date: 22-02-2026
+include::partial$item.adoc[]
+
+.macos-setup.sh
+[%collapsible]
+====
+[,shell]
+----
+include::example$mac/macos-setup.sh[]
+----
+====
