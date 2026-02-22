@@ -31,16 +31,38 @@ Now, there are two choices:
 . Refer to a partial with the `puml` file extension:
 +
 [,adoc]
+----
  [plantuml,target=ab-partial-1,format=svg]
  ----
  include::partial$puml/alice-bob.puml[]
  ----
+----
 
 . Write down the `puml` code and render it directly:
 +
 [,adoc]
+----
  [plantuml,ab-partial-all-1,svg]
  ----
  alice -> bob
  bob -> alice
  ----
+----
+
+== Escaping
+
+:label: Triple plus passthrough
+:date: 02-22-2026
+:source: https://asciidoctor.org/docs/asciidoc-writers-guide/#triple-plus-passthrough[AsciiDoctor]
+include::partial$item.adoc[]
+
+> The triple-plus passthrough works much the same way as the pass macro. To exclude content from substitutions, enclose it in triple pluses (`\+++`).
+
+In AsciiDoc, `+++{text}+++` is the syntax for Attributes (variables). When Antora sees `+++{header}+++`, it tries to find a variable named header.
+
+[,adoc]
+----
+{text} refers to a variable
+`{text}` refers to a variable formatted as a code
+`+++{text}+++` displays the braces and text as is
+----
