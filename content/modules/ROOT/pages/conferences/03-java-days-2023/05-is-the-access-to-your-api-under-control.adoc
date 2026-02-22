@@ -136,7 +136,7 @@ It represents the application's authorization to call an API and has an expirati
 
 *Authentication Code* is an intermediary, opaque code returned to the application and used to obtain an access token and optionally refresh token. Each authorization code is used once.
 
-*Json Web Tokens (JWT)* is a JSON structure  which encodes claims, where claim is value asserted about subject. The structure is `{header}.{payload}.{signature}` and the standard registered claims are:
+*Json Web Tokens (JWT)* is a JSON structure  which encodes claims, where claim is value asserted about subject. The structure is `+++{header}.{payload}.{signature}+++` and the standard registered claims are:
 
 * `jti` - token identifier
 * `iss` - token issuer (issuer)

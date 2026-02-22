@@ -43,10 +43,10 @@ The goal is to change a base branch without lengthy rebasing. Assume huge change
 3. Cherry-pick the commit(s) from `feature/foo` but *DON'T* force push: the commit becomes active.
 4. Create a new branch `feature/foo` and select *"Overwrite existing branch"*.
 +
-image::create-new-branch-overwrite.png[]
+image::intellj-idea/create-new-branch-overwrite.png[]
 5. On a new modal window "Checkout HEAD" select *"Drop Local Commits"*.
 +
-image::checkout-head.png[]
+image::intellj-idea/checkout-head.png[]
 6. Push the branch.
 
 === Disclaimer:
