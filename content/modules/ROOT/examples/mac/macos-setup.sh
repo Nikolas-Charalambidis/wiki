@@ -92,8 +92,8 @@ defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
 echo "⮕  Configuring Keyboard..."
 
 # Fast key repeat
-defaults write -g KeyRepeat -int 1
-defaults write -g InitialKeyRepeat -int 10
+defaults write -g KeyRepeat -int 4
+defaults write -g InitialKeyRepeat -int 20
 
 # ------------------------------
 # Window Behavior
